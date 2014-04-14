@@ -12501,6 +12501,10 @@ Source: http://focus.ti.com/lit/ds/sbos201/sbos201.pdf</description>
 <part name="C12" library="adafruit" deviceset="C-US" device="C1206" value="1.9nF"/>
 <part name="GND27" library="sparkfun" deviceset="GND" device=""/>
 <part name="C13" library="adafruit" deviceset="C-US" device="C1206" value="3.8nF"/>
+<part name="R26" library="rcl" deviceset="R-TRIMM" device="4G/J" value="100k"/>
+<part name="R27" library="rcl" deviceset="R-TRIMM" device="4G/J" value="100k"/>
+<part name="GND29" library="sparkfun" deviceset="GND" device=""/>
+<part name="GND30" library="sparkfun" deviceset="GND" device=""/>
 </parts>
 <sheets>
 <sheet>
@@ -12615,6 +12619,10 @@ Source: http://focus.ti.com/lit/ds/sbos201/sbos201.pdf</description>
 <instance part="C12" gate="G$1" x="330.2" y="-48.26"/>
 <instance part="GND27" gate="1" x="330.2" y="-60.96"/>
 <instance part="C13" gate="G$1" x="320.04" y="-22.86" rot="R90"/>
+<instance part="R26" gate="G$1" x="383.54" y="-58.42"/>
+<instance part="R27" gate="G$1" x="383.54" y="-81.28"/>
+<instance part="GND29" gate="1" x="383.54" y="-91.44"/>
+<instance part="GND30" gate="1" x="383.54" y="-68.58"/>
 </instances>
 <busses>
 <bus name="LCD[0..5]">
@@ -12818,6 +12826,16 @@ Source: http://focus.ti.com/lit/ds/sbos201/sbos201.pdf</description>
 <pinref part="C12" gate="G$1" pin="2"/>
 <pinref part="GND27" gate="1" pin="GND"/>
 <wire x1="330.2" y1="-58.42" x2="330.2" y2="-53.34" width="0.1524" layer="91"/>
+</segment>
+<segment>
+<pinref part="GND30" gate="1" pin="GND"/>
+<pinref part="R26" gate="G$1" pin="A"/>
+<wire x1="383.54" y1="-63.5" x2="383.54" y2="-66.04" width="0.1524" layer="91"/>
+</segment>
+<segment>
+<pinref part="GND29" gate="1" pin="GND"/>
+<pinref part="R27" gate="G$1" pin="A"/>
+<wire x1="383.54" y1="-86.36" x2="383.54" y2="-88.9" width="0.1524" layer="91"/>
 </segment>
 </net>
 <net name="+5V" class="0">
@@ -13502,6 +13520,20 @@ Source: http://focus.ti.com/lit/ds/sbos201/sbos201.pdf</description>
 <wire x1="330.2" y1="-30.48" x2="335.28" y2="-30.48" width="0.1524" layer="91"/>
 <wire x1="330.2" y1="-45.72" x2="330.2" y2="-30.48" width="0.1524" layer="91"/>
 <junction x="330.2" y="-30.48"/>
+</segment>
+</net>
+<net name="N$32" class="0">
+<segment>
+<pinref part="R27" gate="G$1" pin="E"/>
+<wire x1="383.54" y1="-76.2" x2="383.54" y2="-73.66" width="0.1524" layer="91"/>
+<wire x1="383.54" y1="-73.66" x2="381" y2="-73.66" width="0.1524" layer="91"/>
+</segment>
+</net>
+<net name="N$33" class="0">
+<segment>
+<pinref part="R26" gate="G$1" pin="E"/>
+<wire x1="383.54" y1="-53.34" x2="383.54" y2="-50.8" width="0.1524" layer="91"/>
+<wire x1="383.54" y1="-50.8" x2="381" y2="-50.8" width="0.1524" layer="91"/>
 </segment>
 </net>
 </nets>
