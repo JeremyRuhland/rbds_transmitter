@@ -19381,8 +19381,8 @@ General-purpose diode for high-speed switching</description>
 <instance part="U2" gate="P" x="60.96" y="119.38"/>
 <instance part="U3" gate="A" x="337.82" y="109.22" rot="MR180"/>
 <instance part="U3" gate="B" x="330.2" y="68.58"/>
-<instance part="U3" gate="C" x="127" y="144.78"/>
-<instance part="U3" gate="D" x="127" y="167.64"/>
+<instance part="U3" gate="C" x="127" y="167.64"/>
+<instance part="U3" gate="D" x="127" y="144.78"/>
 <instance part="U3" gate="P" x="78.74" y="119.38"/>
 <instance part="FRAME2" gate="G$1" x="0" y="0"/>
 <instance part="C35" gate="G$1" x="289.56" y="213.36"/>
@@ -20342,38 +20342,38 @@ General-purpose diode for high-speed switching</description>
 <net name="N$28" class="0">
 <segment>
 <pinref part="U7" gate="G$1" pin="B"/>
-<wire x1="119.38" y1="147.32" x2="99.06" y2="147.32" width="0.1524" layer="91"/>
 <wire x1="99.06" y1="147.32" x2="99.06" y2="157.48" width="0.1524" layer="91"/>
 <wire x1="99.06" y1="157.48" x2="96.52" y2="157.48" width="0.1524" layer="91"/>
-<pinref part="U3" gate="C" pin="+IN"/>
+<pinref part="U3" gate="D" pin="+IN"/>
+<wire x1="99.06" y1="147.32" x2="119.38" y2="147.32" width="0.1524" layer="91"/>
 </segment>
 </net>
 <net name="N$46" class="0">
 <segment>
-<wire x1="119.38" y1="170.18" x2="111.76" y2="170.18" width="0.1524" layer="91"/>
-<pinref part="U3" gate="D" pin="+IN"/>
-<junction x="111.76" y="170.18"/>
 <pinref part="R14" gate="G$1" pin="1"/>
 <wire x1="109.22" y1="170.18" x2="111.76" y2="170.18" width="0.1524" layer="91"/>
 <pinref part="R12" gate="G$1" pin="2"/>
 <wire x1="111.76" y1="167.64" x2="111.76" y2="170.18" width="0.1524" layer="91"/>
+<junction x="111.76" y="170.18"/>
+<pinref part="U3" gate="C" pin="+IN"/>
+<wire x1="119.38" y1="170.18" x2="111.76" y2="170.18" width="0.1524" layer="91"/>
 </segment>
 </net>
 <net name="BPSK" class="0">
 <segment>
-<wire x1="119.38" y1="142.24" x2="116.84" y2="142.24" width="0.1524" layer="91"/>
 <wire x1="116.84" y1="142.24" x2="116.84" y2="137.16" width="0.1524" layer="91"/>
 <wire x1="116.84" y1="137.16" x2="137.16" y2="137.16" width="0.1524" layer="91"/>
 <wire x1="137.16" y1="137.16" x2="137.16" y2="144.78" width="0.1524" layer="91"/>
-<wire x1="134.62" y1="144.78" x2="137.16" y2="144.78" width="0.1524" layer="91"/>
-<junction x="137.16" y="144.78"/>
 <wire x1="137.16" y1="144.78" x2="139.7" y2="144.78" width="0.1524" layer="91"/>
-<pinref part="U3" gate="C" pin="-IN"/>
-<pinref part="U3" gate="C" pin="OUT"/>
 <junction x="137.16" y="137.16"/>
 <pinref part="TP3" gate="G$1" pin="1"/>
 <wire x1="139.7" y1="137.16" x2="137.16" y2="137.16" width="0.1524" layer="91"/>
 <label x="139.7" y="144.78" size="1.27" layer="95" xref="yes"/>
+<junction x="137.16" y="144.78"/>
+<pinref part="U3" gate="D" pin="-IN"/>
+<wire x1="116.84" y1="142.24" x2="119.38" y2="142.24" width="0.1524" layer="91"/>
+<pinref part="U3" gate="D" pin="OUT"/>
+<wire x1="134.62" y1="144.78" x2="137.16" y2="144.78" width="0.1524" layer="91"/>
 </segment>
 <segment>
 <pinref part="R13" gate="G$1" pin="2"/>
@@ -20404,19 +20404,19 @@ General-purpose diode for high-speed switching</description>
 </net>
 <net name="FREQUENCY" class="0">
 <segment>
-<wire x1="119.38" y1="165.1" x2="116.84" y2="165.1" width="0.1524" layer="91"/>
 <wire x1="116.84" y1="165.1" x2="116.84" y2="160.02" width="0.1524" layer="91"/>
 <wire x1="116.84" y1="160.02" x2="137.16" y2="160.02" width="0.1524" layer="91"/>
 <wire x1="137.16" y1="160.02" x2="137.16" y2="167.64" width="0.1524" layer="91"/>
-<wire x1="137.16" y1="167.64" x2="134.62" y2="167.64" width="0.1524" layer="91"/>
 <wire x1="137.16" y1="167.64" x2="139.7" y2="167.64" width="0.1524" layer="91"/>
-<junction x="137.16" y="167.64"/>
-<pinref part="U3" gate="D" pin="-IN"/>
-<pinref part="U3" gate="D" pin="OUT"/>
 <junction x="137.16" y="160.02"/>
 <pinref part="TP2" gate="G$1" pin="1"/>
 <wire x1="139.7" y1="160.02" x2="137.16" y2="160.02" width="0.1524" layer="91"/>
 <label x="139.7" y="167.64" size="1.27" layer="95" xref="yes"/>
+<junction x="137.16" y="167.64"/>
+<pinref part="U3" gate="C" pin="OUT"/>
+<wire x1="134.62" y1="167.64" x2="137.16" y2="167.64" width="0.1524" layer="91"/>
+<pinref part="U3" gate="C" pin="-IN"/>
+<wire x1="119.38" y1="165.1" x2="116.84" y2="165.1" width="0.1524" layer="91"/>
 </segment>
 <segment>
 <pinref part="R21" gate="G$1" pin="1"/>
