@@ -18942,7 +18942,6 @@ General-purpose diode for high-speed switching</description>
 <part name="R6" library="adafruit" deviceset="R-US_" device="R1206" value="10k"/>
 <part name="R7" library="adafruit" deviceset="R-US_" device="R1206" value="10k"/>
 <part name="U5" library="sparkfun" deviceset="ATMEGA168" device="" value="ATMEGA328"/>
-<part name="AGND1" library="supply1" deviceset="AGND" device=""/>
 <part name="P+28" library="supply1" deviceset="+5V" device=""/>
 <part name="P+3" library="supply1" deviceset="+5V" device=""/>
 <part name="C20" library="adafruit" deviceset="C-US" device="C1206" value="4.7uF"/>
@@ -19192,7 +19191,7 @@ General-purpose diode for high-speed switching</description>
 <instances>
 <instance part="X1" gate="G$1" x="25.4" y="40.64"/>
 <instance part="GND7" gate="1" x="25.4" y="15.24"/>
-<instance part="GND8" gate="1" x="30.48" y="15.24"/>
+<instance part="GND8" gate="1" x="38.1" y="15.24"/>
 <instance part="R4" gate="G$1" x="33.02" y="88.9" rot="R90"/>
 <instance part="P+4" gate="1" x="33.02" y="96.52"/>
 <instance part="C24" gate="G$1" x="17.78" y="25.4"/>
@@ -19201,7 +19200,6 @@ General-purpose diode for high-speed switching</description>
 <instance part="R6" gate="G$1" x="104.14" y="27.94" rot="R180"/>
 <instance part="R7" gate="G$1" x="104.14" y="25.4" rot="R180"/>
 <instance part="U5" gate="G$1" x="63.5" y="55.88"/>
-<instance part="AGND1" gate="VR1" x="38.1" y="15.24"/>
 <instance part="P+28" gate="1" x="38.1" y="96.52"/>
 <instance part="P+3" gate="1" x="17.78" y="35.56"/>
 <instance part="C20" gate="G$1" x="10.16" y="25.4"/>
@@ -19460,12 +19458,19 @@ General-purpose diode for high-speed switching</description>
 <segment>
 <pinref part="U5" gate="G$1" pin="GND@2"/>
 <pinref part="GND8" gate="1" pin="GND"/>
-<wire x1="30.48" y1="17.78" x2="30.48" y2="25.4" width="0.1524" layer="91"/>
-<wire x1="30.48" y1="25.4" x2="40.64" y2="25.4" width="0.1524" layer="91"/>
+<wire x1="38.1" y1="17.78" x2="38.1" y2="25.4" width="0.1524" layer="91"/>
+<wire x1="38.1" y1="25.4" x2="40.64" y2="25.4" width="0.1524" layer="91"/>
 <pinref part="U5" gate="G$1" pin="GND@1"/>
-<wire x1="40.64" y1="27.94" x2="30.48" y2="27.94" width="0.1524" layer="91"/>
-<wire x1="30.48" y1="27.94" x2="30.48" y2="25.4" width="0.1524" layer="91"/>
-<junction x="30.48" y="25.4"/>
+<wire x1="40.64" y1="27.94" x2="38.1" y2="27.94" width="0.1524" layer="91"/>
+<wire x1="38.1" y1="27.94" x2="38.1" y2="25.4" width="0.1524" layer="91"/>
+<junction x="38.1" y="25.4"/>
+<pinref part="U5" gate="G$1" pin="AGND"/>
+<wire x1="40.64" y1="30.48" x2="38.1" y2="30.48" width="0.1524" layer="91"/>
+<pinref part="C22" gate="G$1" pin="2"/>
+<wire x1="38.1" y1="40.64" x2="38.1" y2="30.48" width="0.1524" layer="91"/>
+<junction x="38.1" y="30.48"/>
+<wire x1="38.1" y1="27.94" x2="38.1" y2="30.48" width="0.1524" layer="91"/>
+<junction x="38.1" y="27.94"/>
 </segment>
 <segment>
 <pinref part="C20" gate="G$1" pin="2"/>
@@ -19989,15 +19994,6 @@ General-purpose diode for high-speed switching</description>
 </segment>
 </net>
 <net name="AGND" class="0">
-<segment>
-<pinref part="U5" gate="G$1" pin="AGND"/>
-<pinref part="AGND1" gate="VR1" pin="AGND"/>
-<wire x1="40.64" y1="30.48" x2="38.1" y2="30.48" width="0.1524" layer="91"/>
-<wire x1="38.1" y1="30.48" x2="38.1" y2="17.78" width="0.1524" layer="91"/>
-<junction x="38.1" y="30.48"/>
-<pinref part="C22" gate="G$1" pin="2"/>
-<wire x1="38.1" y1="40.64" x2="38.1" y2="30.48" width="0.1524" layer="91"/>
-</segment>
 <segment>
 <wire x1="322.58" y1="66.04" x2="320.04" y2="66.04" width="0.1524" layer="91"/>
 <wire x1="320.04" y1="66.04" x2="320.04" y2="60.96" width="0.1524" layer="91"/>
