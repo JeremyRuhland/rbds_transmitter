@@ -16,8 +16,10 @@ void mainTransmissionTask(void);
 
 // Global variables
 #include "sintables.txt"
+#include "textstrings.txt"
 volatile mainSystemState_t mainSystemState = FREQUENCY_INPUT_MODE;
-volatile uint8_t
+volatile uint16_t mainTransitFrequency;
+
 int main(void) {
     // Initialize all functions
     mainGpioInit();
