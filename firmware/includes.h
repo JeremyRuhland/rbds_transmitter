@@ -16,4 +16,7 @@
 #include "uart.h"
 #include "lcd.h"
 
+#define FALSE 0
+#define TRUE 1
+
 typedef enum {FREQUENCY_INPUT_MODE, DATA_INPUT_MODE, ENCODING_MODE, TRANSMISSION_MODE} mainSystemState_t;
