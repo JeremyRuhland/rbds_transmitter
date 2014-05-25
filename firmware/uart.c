@@ -24,26 +24,3 @@ uint8_t uartRx(void) {
 
     return (byte);
 }
-
-void uartTxByte(uint8_t byte) {
-    while(!(UCSR0A & (1<<UDRE0))) {} // Wail for buffer empty
-    UDR0 = byte;
-}
-
-void uartTxWord(uint16_t word) {
-    while(!(UCSR0A & (1<<TXC0))) {} // Wail for buffer & Tx empty
-
-    // Write upper & lower byte
-    uartTxByte((uint8_t) (word>>8));
-    uartTxByte((uint8_t) word);
-}
-
-#ifdef TEXT_DEBUG
-void uartTxStrg(char strg[]) {
-    uint8_t i = 0;
-
-    for (; strg[i] != 0x00; i++) {
-        uartTxByte((uint8_t) strg[i]);
-    }
-}
-#endif

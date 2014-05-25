@@ -40,4 +40,4 @@ filesize:
 	avr-size -C --mcu=$(MMCU) $(PROJECT).elf 
 
 clean:
-	rm -f $(PROJECT).elf $(PROJECT).hex $(PROJECT).lst
+	rm -f $(PROJECT).elf $(PROJECT).hex *.lst

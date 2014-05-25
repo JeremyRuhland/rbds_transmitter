@@ -18,5 +18,4 @@
 ******************************************************************************/
 
 extern void spiInit(void);
-extern void spiPeripheralSelect(uint8_t peripheral);
 extern uint8_t spiByte(uint8_t byte);
