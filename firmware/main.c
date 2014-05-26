@@ -14,7 +14,7 @@ void mainFrequencyInputTask(void);
 void mainDataInputTask(void);
 void mainEncodingTask(void);
 void mainTransmissionTask(void);
-void mainFrequencyInputLcdDisp(uint8_t msg[]);
+void mainFrequencyInputLcdDisp(void);
 void delayOneSec(void);
 void mainDataInputLcdDisp(void);
 
@@ -22,6 +22,7 @@ void mainDataInputLcdDisp(void);
 #include "sintables.txt"
 PROGMEM const uint8_t mainCustomChars[] = {0x0e, 0x11, 0x04, 0x0A, 0x00, 0x04, 0x04, 0x04, 0x00, 0x02, 0x06, 0x0e, 0x06, 0x02, 0x00, 0x00};
 volatile mainSystemState_t mainSystemState = FREQUENCY_INPUT_MODE;
+volatile uint8_t mainFrequencyBuffer[5];
 volatile uint16_t mainTransitFrequency;
 volatile uint8_t mainDataBuffer[65];
 PROGMEM const rbds_t group1 = {.block1 = {.picode = PICODE, .checkword = PICODECHECKWORD}};
@@ -83,21 +84,20 @@ void mainLcdInit(void) {
 * Modifies global variable mainSystemState & mainTransitFrequency              *
 *******************************************************************************/
 void mainFrequencyInputTask(void) {
-    uint8_t msgFrequencyBuffer[5];
     uint8_t msgIndex;
     uint8_t msgIncomingChar;
     uint32_t msgTransitFrequency;
 
-    // Clear msgFrequencyBuffer
+    // Clear mainFrequencyBuffer
     for (msgIndex = 0; msgIndex <= 4; msgIndex++) {
-        msgFrequencyBuffer[msgIndex] = ' ';
+        mainFrequencyBuffer[msgIndex] = ' ';
     }
 
     // Display frequency mode message
     lcd_clrscr();
     lcd_puts_P("Enter Frequency:");
     // Show current buffer on lcd
-    mainFrequencyInputLcdDisp(&msgFrequencyBuffer);
+    mainFrequencyInputLcdDisp();
 
     for (msgIndex = 0; msgIndex <= 5; msgIndex++) {
         // Enable interrupts, put cpu to sleep, will wake on uart char rx
@@ -114,17 +114,17 @@ void mainFrequencyInputTask(void) {
             if (msgIndex <= 4) {
                 // Loop to end of array, filling each element with '0'
                 for (; msgIndex <= 4; msgIndex++) {
-                    msgFrequencyBuffer[msgIndex] = '0';
+                    mainFrequencyBuffer[msgIndex] = '0';
                 }
                 // msgIndex now at 5, for loop will exit and convert string to binary
             } else {}
         } else if (msgIndex <= 4 && msgIncomingChar >= '0' && msgIncomingChar <= '9') {
             // If 0-9 input, fill element in buffer array
-            msgFrequencyBuffer[msgIndex] = msgIncomingChar;
+            mainFrequencyBuffer[msgIndex] = msgIncomingChar;
         } else if (msgIndex > 0 && msgIncomingChar == BACKSPACE) {
             // If BACKSPACE input & enough room in buffer go back & clear prev buffer element
             msgIndex--;
-            msgFrequencyBuffer[msgIndex] = ' ';
+            mainFrequencyBuffer[msgIndex] = ' ';
             msgIndex--;
         } else {
             // Do not count illegal char entry (either not 0-9/RETURN/BACKSPACE or buffer is already full)
@@ -132,7 +132,7 @@ void mainFrequencyInputTask(void) {
         }
 
         // Show current buffer on lcd
-        mainFrequencyInputLcdDisp(&msgFrequencyBuffer);
+        mainFrequencyInputLcdDisp();
     }
 
     // Convert string to binary
@@ -140,27 +140,27 @@ void mainFrequencyInputTask(void) {
     // Shift digit over and add each element of buffer array
     for (msgIndex = 0; msgIndex <= 4; msgIndex++) {
         msgTransitFrequency *= 10;
-        msgTransitFrequency += (msgFrequencyBuffer[msgIndex]);
+        msgTransitFrequency += (mainFrequencyBuffer[msgIndex]);
     }
     // If impossibly high frequency is requested, force lower frequency
     if (msgTransitFrequency > 15000) {
         msgTransitFrequency = 15000;
-        msgFrequencyBuffer[0] = '1';
-        msgFrequencyBuffer[1] = '5';
-        msgFrequencyBuffer[2] = '0';
-        msgFrequencyBuffer[3] = '0';
-        msgFrequencyBuffer[4] = '0';
-        mainFrequencyInputLcdDisp(&msgFrequencyBuffer);
+        mainFrequencyBuffer[0] = '1';
+        mainFrequencyBuffer[1] = '5';
+        mainFrequencyBuffer[2] = '0';
+        mainFrequencyBuffer[3] = '0';
+        mainFrequencyBuffer[4] = '0';
+        mainFrequencyInputLcdDisp();
         delayOneSec();
     // If impossibly low frequency is requested, force higher frequency
     } else if (msgTransitFrequency < 7000) {
         msgTransitFrequency = 7000;
-        msgFrequencyBuffer[0] = ' ';
-        msgFrequencyBuffer[1] = '7';
-        msgFrequencyBuffer[2] = '0';
-        msgFrequencyBuffer[3] = '0';
-        msgFrequencyBuffer[4] = '0';
-        mainFrequencyInputLcdDisp(&msgFrequencyBuffer);
+        mainFrequencyBuffer[0] = ' ';
+        mainFrequencyBuffer[1] = '7';
+        mainFrequencyBuffer[2] = '0';
+        mainFrequencyBuffer[3] = '0';
+        mainFrequencyBuffer[4] = '0';
+        mainFrequencyInputLcdDisp();
         delayOneSec();
     } else {}
     mainTransitFrequency = ((uint16_t) msgTransitFrequency);
@@ -168,15 +168,15 @@ void mainFrequencyInputTask(void) {
     mainSystemState = DATA_INPUT_MODE; // Move on to next entry state
 }
 
-void mainFrequencyInputLcdDisp(uint8_t msg[]) {
+void mainFrequencyInputLcdDisp(void) {
     // Show current buffer on lcd
     lcd_gotoxy(5, 1);
-    lcd_putc(msg[0]);
-    lcd_putc(msg[1]);
-    lcd_putc(msg[2]);
+    lcd_putc(mainFrequencyBuffer[0]);
+    lcd_putc(mainFrequencyBuffer[1]);
+    lcd_putc(mainFrequencyBuffer[2]);
     lcd_putc('.');
-    lcd_putc(msg[3]);
-    lcd_putc(msg[4]);
+    lcd_putc(mainFrequencyBuffer[3]);
+    lcd_putc(mainFrequencyBuffer[4]);
 }
 
 void delayOneSec(void) {
@@ -262,7 +262,7 @@ void mainDataInputLcdDisp(void) {
     lcd_gotoxy(0, 1); // Move cursor to beginning of second line
     // Check if msg exceeds 16 chars
     if (mainDataBuffer[16] == 0x00) {
-        lcd_puts(&mainDataBuffer); // Print entire buffer onto lcd
+        lcd_puts(&mainDataBuffer[0]); // Print entire buffer onto lcd
     } else {
         // Check length of buffer
         for (i = 0; mainDataBuffer[i] == 0x00; i++) {}
@@ -287,6 +287,8 @@ void mainTransmissionTask(void) {
     
     PORTD &= ~(1<<PD1); // Turn on transmission circuits
     _delay_ms(100);
+
+    encFrequency = mainTransitFrequency;
 
     // Set transmission frequency
     encDac.bit.channel = CHA;
