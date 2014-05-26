@@ -13,4 +13,4 @@
 ******************************************************************************/
 
 extern void spiInit(void);
-extern uint8_t spiByte(uint8_t byte);
+extern void spiUpdateDac(dac_t dacdata);
