@@ -145,13 +145,21 @@ void mainFrequencyInputTask(void) {
     // If impossibly high frequency is requested, force lower frequency
     if (msgTransitFrequency > 15000) {
         msgTransitFrequency = 15000;
-        msgFrequencyBuffer[0] = '15000';
+        msgFrequencyBuffer[0] = '1';
+        msgFrequencyBuffer[1] = '5';
+        msgFrequencyBuffer[2] = '0';
+        msgFrequencyBuffer[3] = '0';
+        msgFrequencyBuffer[4] = '0';
         mainFrequencyInputLcdDisp(&msgFrequencyBuffer);
         delayOneSec();
     // If impossibly low frequency is requested, force higher frequency
     } else if (msgTransitFrequency < 7000) {
         msgTransitFrequency = 7000;
-        msgFrequencyBuffer[0] = ' 7000';
+        msgFrequencyBuffer[0] = ' ';
+        msgFrequencyBuffer[1] = '7';
+        msgFrequencyBuffer[2] = '0';
+        msgFrequencyBuffer[3] = '0';
+        msgFrequencyBuffer[4] = '0';
         mainFrequencyInputLcdDisp(&msgFrequencyBuffer);
         delayOneSec();
     } else {}
@@ -275,12 +283,15 @@ void mainEncodingTask(void) {
 *******************************************************************************/
 void mainTransmissionTask(void) {
     dac_t encDac;
-    
-    encDac.bit.channel = CHA;
-    encDac.bit.gainstage = VREF;
-    encDac.bit.shutdown = STARTUP;
-    //encDac.bit.data = (mainTransitFrequency/)
+    uint16_t encFrequency;
     
     PORTD &= ~(1<<PD1); // Turn on transmission circuits
     _delay_ms(100);
+
+    // Set transmission frequency
+    encDac.bit.channel = CHA;
+    encDac.bit.gainstage = VREF;
+    encDac.bit.shutdown = STARTUP;
+    encDac.bit.data = encFrequency;
+    spiUpdateDac(encDac);
 }
