@@ -8,13 +8,14 @@
 #include "includes.h"
 
 // Function prototypes
-inline void mainGpioInit(void);
-inline void mainLcdInit(void);
+void mainGpioInit(void);
+void mainLcdInit(void);
 void mainFrequencyInputTask(void);
 void mainDataInputTask(void);
 void mainEncodingTask(void);
 void mainTransmissionTask(void);
 void mainFrequencyInputLcdDisp(uint8_t msg[]);
+void delayOneSec(void);
 void mainDataInputLcdDisp(void);
 
 // Global variables
@@ -23,6 +24,7 @@ PROGMEM const uint8_t mainCustomChars[] = {0x0e, 0x11, 0x04, 0x0A, 0x00, 0x04, 0
 volatile mainSystemState_t mainSystemState = FREQUENCY_INPUT_MODE;
 volatile uint16_t mainTransitFrequency;
 volatile uint8_t mainDataBuffer[65];
+PROGMEM const rbds_t group1 = {.block1 = {.picode = PICODE, .checkword = PICODECHECKWORD}};
 
 int main(void) {
     // Initialize all functions
@@ -56,8 +58,8 @@ int main(void) {
 * Initialization routines                                                      *
 *******************************************************************************/
 void mainGpioInit(void) {
-    PORTD |= ((1<<PD1) | (1<<PD2) | (1<<PD5) | (1<<PD6));
-    DDRD |= ((1<<PD1) | (1<<PD2) | (1<<PD3) | (1<<PD5) | (1<<PD6));
+    PORTD |= ((1<<PD3) | (1<<PD5) | (1<<PD6));
+    DDRD |= ((1<<PD1) | (1<<PD3) | (1<<PD5) | (1<<PD6));
     DDRB |= ((1<<PB1) | (1<<PB2) | (1<<PB3) | (1<<PB5));
 }
 
@@ -79,7 +81,6 @@ void mainLcdInit(void) {
 * the variable is floor/ceilinged to maintain a sane value.                    *
 *                                                                              *
 * Modifies global variable mainSystemState & mainTransitFrequency              *
-* & msgFrequencyBuffer                                                        *
 *******************************************************************************/
 void mainFrequencyInputTask(void) {
     uint8_t msgFrequencyBuffer[5];
@@ -144,9 +145,15 @@ void mainFrequencyInputTask(void) {
     // If impossibly high frequency is requested, force lower frequency
     if (msgTransitFrequency > 15000) {
         msgTransitFrequency = 15000;
+        msgFrequencyBuffer[0] = '15000';
+        mainFrequencyInputLcdDisp(&msgFrequencyBuffer);
+        delayOneSec();
     // If impossibly low frequency is requested, force higher frequency
     } else if (msgTransitFrequency < 7000) {
         msgTransitFrequency = 7000;
+        msgFrequencyBuffer[0] = ' 7000';
+        mainFrequencyInputLcdDisp(&msgFrequencyBuffer);
+        delayOneSec();
     } else {}
     mainTransitFrequency = ((uint16_t) msgTransitFrequency);
 
@@ -164,8 +171,21 @@ void mainFrequencyInputLcdDisp(uint8_t msg[]) {
     lcd_putc(msg[4]);
 }
 
+void delayOneSec(void) {
+    uint8_t i;
+    
+    for (i = 0; i <= 9; i++) {
+        _delay_ms(100);
+    }
+}
+
 /*******************************************************************************
-* Data input task
+* Data input task, sleeps CPU until UART Rx, places char into buffer.          *
+* When buffer fills all keys but RETURN & BACKSPACE are ignored. If at any     *
+* time RETURN is received the entry is assumed to be finished and the system   *
+* moves to the next state.                                                     *
+*                                                                              *
+* Modifies global variable mainSystemState & mainDataBuffer                    *
 *******************************************************************************/
 void mainDataInputTask(void) {
     uint8_t msgIndex;
@@ -240,7 +260,7 @@ void mainDataInputLcdDisp(void) {
         for (i = 0; mainDataBuffer[i] == 0x00; i++) {}
         // i now contains length of buffer
         lcd_data(1); // Print left arrow char
-        lcd_puts(&mainDataBuffer[i-16]); // Print to end of string from i
+        lcd_puts(&mainDataBuffer[i-15]); // Print to end of string from i
     }
 }
 
@@ -254,4 +274,13 @@ void mainEncodingTask(void) {
 *
 *******************************************************************************/
 void mainTransmissionTask(void) {
+    dac_t encDac;
+    
+    encDac.bit.channel = CHA;
+    encDac.bit.gainstage = VREF;
+    encDac.bit.shutdown = STARTUP;
+    //encDac.bit.data = (mainTransitFrequency/)
+    
+    PORTD &= ~(1<<PD1); // Turn on transmission circuits
+    _delay_ms(100);
 }
