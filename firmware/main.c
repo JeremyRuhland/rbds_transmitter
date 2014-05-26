@@ -14,7 +14,7 @@ void mainFrequencyInputTask(void);
 void mainDataInputTask(void);
 void mainEncodingTask(void);
 void mainTransmissionTask(void);
-void mainFrequencyInputLcdDisp(void);
+void mainFrequencyInputLcdDisp(uint8_t msg[]);
 void mainDataInputLcdDisp(void);
 
 // Global variables
@@ -22,7 +22,6 @@ void mainDataInputLcdDisp(void);
 PROGMEM const uint8_t mainCustomChars[] = {0x0e, 0x11, 0x04, 0x0A, 0x00, 0x04, 0x04, 0x04, 0x00, 0x02, 0x06, 0x0e, 0x06, 0x02, 0x00, 0x00};
 volatile mainSystemState_t mainSystemState = FREQUENCY_INPUT_MODE;
 volatile uint16_t mainTransitFrequency;
-volatile uint8_t mainFrequencyBuffer[6];
 volatile uint8_t mainDataBuffer[65];
 
 int main(void) {
@@ -80,24 +79,24 @@ void mainLcdInit(void) {
 * the variable is floor/ceilinged to maintain a sane value.                    *
 *                                                                              *
 * Modifies global variable mainSystemState & mainTransitFrequency              *
-* & mainFrequencyBuffer                                                        *
+* & msgFrequencyBuffer                                                        *
 *******************************************************************************/
 void mainFrequencyInputTask(void) {
+    uint8_t msgFrequencyBuffer[5];
     uint8_t msgIndex;
     uint8_t msgIncomingChar;
     uint32_t msgTransitFrequency;
 
-    // Clear mainFrequencyBuffer
+    // Clear msgFrequencyBuffer
     for (msgIndex = 0; msgIndex <= 4; msgIndex++) {
-        mainFrequencyBuffer[msgIndex] = ' ';
+        msgFrequencyBuffer[msgIndex] = ' ';
     }
-    mainFrequencyBuffer[5] = 0x00;
 
     // Display frequency mode message
     lcd_clrscr();
     lcd_puts_P("Enter Frequency:");
     // Show current buffer on lcd
-    mainFrequencyInputLcdDisp();
+    mainFrequencyInputLcdDisp(&msgFrequencyBuffer);
 
     for (msgIndex = 0; msgIndex <= 5; msgIndex++) {
         // Enable interrupts, put cpu to sleep, will wake on uart char rx
@@ -114,17 +113,17 @@ void mainFrequencyInputTask(void) {
             if (msgIndex <= 4) {
                 // Loop to end of array, filling each element with '0'
                 for (; msgIndex <= 4; msgIndex++) {
-                    mainFrequencyBuffer[msgIndex] = '0';
+                    msgFrequencyBuffer[msgIndex] = '0';
                 }
                 // msgIndex now at 5, for loop will exit and convert string to binary
             } else {}
         } else if (msgIndex <= 4 && msgIncomingChar >= '0' && msgIncomingChar <= '9') {
             // If 0-9 input, fill element in buffer array
-            mainFrequencyBuffer[msgIndex] = msgIncomingChar;
+            msgFrequencyBuffer[msgIndex] = msgIncomingChar;
         } else if (msgIndex > 0 && msgIncomingChar == BACKSPACE) {
             // If BACKSPACE input & enough room in buffer go back & clear prev buffer element
             msgIndex--;
-            mainFrequencyBuffer[msgIndex] = ' ';
+            msgFrequencyBuffer[msgIndex] = ' ';
             msgIndex--;
         } else {
             // Do not count illegal char entry (either not 0-9/RETURN/BACKSPACE or buffer is already full)
@@ -132,7 +131,7 @@ void mainFrequencyInputTask(void) {
         }
 
         // Show current buffer on lcd
-        mainFrequencyInputLcdDisp();
+        mainFrequencyInputLcdDisp(&msgFrequencyBuffer);
     }
 
     // Convert string to binary
@@ -140,40 +139,29 @@ void mainFrequencyInputTask(void) {
     // Shift digit over and add each element of buffer array
     for (msgIndex = 0; msgIndex <= 4; msgIndex++) {
         msgTransitFrequency *= 10;
-        msgTransitFrequency += (mainFrequencyBuffer[msgIndex]);
+        msgTransitFrequency += (msgFrequencyBuffer[msgIndex]);
     }
     // If impossibly high frequency is requested, force lower frequency
     if (msgTransitFrequency > 15000) {
         msgTransitFrequency = 15000;
-        mainFrequencyBuffer[0] = '1';
-        mainFrequencyBuffer[2] = '5';
-        mainFrequencyBuffer[3] = '0';
-        mainFrequencyBuffer[4] = '0';
-        mainFrequencyBuffer[5] = '0';
-        mainFrequencyBuffer[6] = 0x00;
     // If impossibly low frequency is requested, force higher frequency
     } else if (msgTransitFrequency < 7000) {
         msgTransitFrequency = 7000;
-        mainFrequencyBuffer[0] = '7';
-        mainFrequencyBuffer[1] = '0';
-        mainFrequencyBuffer[2] = '0';
-        mainFrequencyBuffer[3] = '0';
-        mainFrequencyBuffer[4] = 0x00;
     } else {}
     mainTransitFrequency = ((uint16_t) msgTransitFrequency);
 
     mainSystemState = DATA_INPUT_MODE; // Move on to next entry state
 }
 
-void mainFrequencyInputLcdDisp(void) {
+void mainFrequencyInputLcdDisp(uint8_t msg[]) {
     // Show current buffer on lcd
     lcd_gotoxy(5, 1);
-    lcd_putc(mainFrequencyBuffer[0]);
-    lcd_putc(mainFrequencyBuffer[1]);
-    lcd_putc(mainFrequencyBuffer[2]);
+    lcd_putc(msg[0]);
+    lcd_putc(msg[1]);
+    lcd_putc(msg[2]);
     lcd_putc('.');
-    lcd_putc(mainFrequencyBuffer[3]);
-    lcd_putc(mainFrequencyBuffer[4]);
+    lcd_putc(msg[3]);
+    lcd_putc(msg[4]);
 }
 
 /*******************************************************************************
@@ -246,13 +234,13 @@ void mainDataInputLcdDisp(void) {
     lcd_gotoxy(0, 1); // Move cursor to beginning of second line
     // Check if msg exceeds 16 chars
     if (mainDataBuffer[16] == 0x00) {
-        lcd_puts(mainDataBuffer); // Print entire buffer onto lcd
+        lcd_puts(&mainDataBuffer); // Print entire buffer onto lcd
     } else {
         // Check length of buffer
         for (i = 0; mainDataBuffer[i] == 0x00; i++) {}
         // i now contains length of buffer
         lcd_data(1); // Print left arrow char
-        lcd_puts(mainDataBuffer[i-16]); // Print to end of string from i
+        lcd_puts(&mainDataBuffer[i-16]); // Print to end of string from i
     }
 }
 
