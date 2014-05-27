@@ -255,7 +255,7 @@ void mainDataInputTask(void) {
         mainSystemState = FREQUENCY_INPUT_MODE;
     } else {
         // Check length of buffer
-        for (msgIndex = 0; mainDataBuffer[i] != 0x00; msgIndex++) {}
+        for (msgIndex = 0; mainDataBuffer[msgIndex] != 0x00; msgIndex++) {}
         // msgIndex now contains length of buffer
         // If message length not divisible by 4, add extra spaces at end of buffer until it is
         msgPadBuffer = (msgIndex % 4);
@@ -324,7 +324,7 @@ void mainEncodingTask(void) {
                 encRbdsBuffer[i].type2groupb.tp = FALSE; // No traffic announcements
                 encRbdsBuffer[i].type2groupb.pty = NOPROGRAMTYPE; // No PTY sent to receiver
                 encRbdsBuffer[i].type2groupb.textab = A; // Group type A
-                encRbdsBuffer[i].type2groupb.segementaddress = encCurrentSegment;
+                encRbdsBuffer[i].type2groupb.segmentaddress = encCurrentSegment;
                 // Compute group checksum
                 encRbdsBuffer[i].type2groupb.checkword = crcChecksum(&encRbdsBuffer[i], OFFSETB);
                 break;
