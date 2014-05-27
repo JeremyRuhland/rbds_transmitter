@@ -11,7 +11,7 @@ EFUSEBITS=0xFD
 
 
 
-SOURCES=main.c lcd.c spi.c uart.c
+SOURCES=main.c lcd.c spi.c uart.c crc.c
 CC=avr-gcc
 OBJCOPY=avr-objcopy
 
