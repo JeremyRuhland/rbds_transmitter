@@ -20,12 +20,13 @@ void mainDataInputLcdDisp(void);
 
 // Global variables
 #include "sintables.txt"
-PROGMEM const uint8_t mainCustomChars[] = {0x0e, 0x11, 0x04, 0x0A, 0x00, 0x04, 0x04, 0x04, 0x00, 0x02, 0x06, 0x0e, 0x06, 0x02, 0x00, 0x00};
+const uint8_t mainCustomChars[] PROGMEM = {0x0e, 0x11, 0x04, 0x0A, 0x00, 0x04, 0x04, 0x04, 0x00, 0x02, 0x06, 0x0e, 0x06, 0x02, 0x00, 0x00};
 volatile mainSystemState_t mainSystemState = FREQUENCY_INPUT_MODE;
 volatile uint8_t mainFrequencyBuffer[5];
 volatile uint16_t mainTransitFrequency;
 volatile uint8_t mainDataBuffer[65];
-PROGMEM const rbds_t group1 = {.block1 = {.picode = PICODE, .checkword = PICODECHECKWORD}};
+volatile uint8_t mainRbdsPacketBuffer[208];
+volatile uint8_t mainRbdsPacketLength;
 
 int main(void) {
     // Initialize all functions
@@ -193,12 +194,14 @@ void delayOneSec(void) {
 * time RETURN is received the entry is assumed to be finished and the system   *
 * moves to the next state.                                                     *
 *                                                                              *
-* Modifies global variable mainSystemState & mainDataBuffer                    *
+* Modifies global variable mainSystemState & mainDataBuffer &                  *
+* mainRbdsPacketLength                                                         *
 *******************************************************************************/
 void mainDataInputTask(void) {
     uint8_t msgIndex;
     uint8_t msgIncomingChar;
     uint8_t msgRevertToPrevState = FALSE;
+    uint8_t msgPadBuffer;
 
     // Clear mainDataBuffer
     for (msgIndex = 0; msgIndex <= 64; msgIndex++) {
@@ -251,6 +254,26 @@ void mainDataInputTask(void) {
     if (msgRevertToPrevState) {
         mainSystemState = FREQUENCY_INPUT_MODE;
     } else {
+        // Check length of buffer
+        for (msgIndex = 0; mainDataBuffer[i] != 0x00; msgIndex++) {}
+        // msgIndex now contains length of buffer
+        // If message length not divisible by 4, add extra spaces at end of buffer until it is
+        msgPadBuffer = (msgIndex % 4);
+        if (msgPadBuffer != 0) {
+            for (; msgPadBuffer <= 3; msgPadBuffer++) {
+                mainDataBuffer[msgIndex+msgPadBuffer] = ' ';
+            }
+            mainRbdsPacketLength = ((msgIndex+msgPadBuffer)/4);
+        // If zero length buffer, make 4 space chars
+        } else if (msgIndex == 0) {
+            mainDataBuffer[0] = ' ';
+            mainDataBuffer[1] = ' ';
+            mainDataBuffer[3] = ' ';
+            mainDataBuffer[4] = ' ';
+            mainRbdsPacketLength = 1;
+        } else {
+            mainRbdsPacketLength = (msgIndex/4);
+        }
         mainSystemState = ENCODING_MODE;
     }
 }
@@ -265,7 +288,7 @@ void mainDataInputLcdDisp(void) {
         lcd_puts(&mainDataBuffer[0]); // Print entire buffer onto lcd
     } else {
         // Check length of buffer
-        for (i = 0; mainDataBuffer[i] == 0x00; i++) {}
+        for (i = 0; mainDataBuffer[i] != 0x00; i++) {}
         // i now contains length of buffer
         lcd_data(1); // Print left arrow char
         lcd_puts(&mainDataBuffer[i-15]); // Print to end of string from i
@@ -273,9 +296,67 @@ void mainDataInputLcdDisp(void) {
 }
 
 /*******************************************************************************
-*
+* Encoding task, takes text data and formats rbds packets for transmission.    *
+*                                                                              *
+* Modifies global variable mainSystemState & mainRbdsPacketBuffer              *
 *******************************************************************************/
 void mainEncodingTask(void) {
+    rbds_t encRbdsBuffer[mainRbdsPacketLength];
+    uint8_t encLoopLength;
+    uint8_t i;
+    uint16_t encBitLength;
+    uint16_t encCurrentBit;
+    uint8_t encCurrentSegment = 0;
+    
+    encLoopLength = ((mainRbdsPacketLength*4)-1);
+    
+    // Stuff fields
+    for (i = 0; i <= encLoopLength; i++) {
+        switch (i % 4) {
+            case 0:
+                // Fill each group A field with premade data
+                encRbdsBuffer[i].groupa.picode = PICODE;
+                encRbdsBuffer[i].groupa.checkword = PICODECHECKWORD;
+                break;
+            case 1:
+                // Fill each group B field with appropriate data
+                encRbdsBuffer[i].type2groupcd.grouptype = GROUP2A; // group type 2A, radiotext
+                encRbdsBuffer[i].type2groupcd.tp = FALSE; // No traffic announcements
+                encRbdsBuffer[i].type2groupcd.pty = NOPROGRAMTYPE; // No PTY sent to receiver
+                encRbdsBuffer[i].type2groupcd.textab = A; // Group type A
+                encRbdsBuffer[i].type2groupcd.segementaddress = encCurrentSegment;
+                // Compute group checksum
+                encRbdsBuffer[i].type2groupcd.checkword = crcChecksum(&encRbdsBuffer[i], OFFSETB);
+                break;
+            case 2:
+                // Fill group c with two chars
+                encRbdsBuffer[i].type2groupcd.hichar = mainDataBuffer[encCurrentSegment];
+                encCurrentSegment++;
+                encRbdsBuffer[i].type2groupcd.lowchar = mainDataBuffer[encCurrentSegment];
+                encCurrentSegment++;
+                // Compute group checksum
+                encRbdsBuffer[i].type2groupcd.checkword = crcChecksum(&encRbdsBuffer[i], OFFSETC);
+                break;
+            case 3:
+                // Fill group d with two chars
+                encRbdsBuffer[i].type2groupcd.hichar = mainDataBuffer[encCurrentSegment];
+                encCurrentSegment++;
+                encRbdsBuffer[i].type2groupcd.lowchar = mainDataBuffer[encCurrentSegment];
+                encCurrentSegment++;
+                // Compute group checksum
+                encRbdsBuffer[i].type2groupcd.checkword = crcChecksum(&encRbdsBuffer[i], OFFSETD);
+                break;
+            default :
+                break;
+        }
+    }
+    
+    encBitLength = ((((uint16_t) mainRbdsPacketLength)*104)-1);
+    // Differentially encode encRbdsBuffer and place into mainRbdsPacketBuffer
+    for (encCurrentBit = 0; encCurrentBit <= encBitLength; encCurrentBit++) {
+        i = ((encCurrentBit+1)/32); // calculate which element of encRbdsBuffer is being worked on
+        
+    }
 }
 
 /*******************************************************************************

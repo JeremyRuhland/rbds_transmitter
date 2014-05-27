@@ -25,8 +25,19 @@
 #define STARTUP ((uint8_t) 1)
 #define SHUTDOWN ((uint8_t) 0)
 
-#define PICODE 0
-#define PICODECHECKWORD 0
+#define PICODE ((uint16_t) 0x54a8)
+#define PICODECHECKWORD ((uint16_t) 0x0000)
+
+#define OFFSETA ((uint8_t) 0x00)
+#define OFFSETB ((uint8_t) 0x01)
+#define OFFSETC ((uint8_t) 0x02)
+#define OFFSETC2 ((uint8_t) 0x03)
+#define OFFSETD ((uint8_t) 0x04)
+#define OFFSETE ((uint8_t) 0x05)
+
+#define GROUP2A ((uint8_t) 0x04)
+#define NOPROGRAMTYPE ((uint8_t) 0x00)
+#define A ((uint8_t) 0x00)
 
 typedef enum {FREQUENCY_INPUT_MODE, DATA_INPUT_MODE, ENCODING_MODE, TRANSMISSION_MODE} mainSystemState_t;
 
@@ -47,46 +58,46 @@ typedef struct {
     uint16_t picode    : 16;
     uint16_t checkword : 10;
     uint8_t            : 6;
-} block1_t;
+} groupa_t;
 
 typedef struct {
-    uint8_t grouptype       : 4;
-    uint8_t version         : 1;
-    uint8_t trafficprogcode : 1;
-    uint8_t pty             : 5;
-    uint8_t ta              : 1;
-    uint8_t ms              : 1;
-    uint8_t di              : 1;
-    uint8_t c               : 2;
-    uint16_t checkword      : 10;
-    uint8_t                 : 6;
-} type0group_t;
-
-typedef struct {
-    uint8_t grouptype  : 4;
-    uint8_t bo         : 1;
+    uint8_t grouptype  : 5;
     uint8_t tp         : 1;
     uint8_t pty        : 5;
-    uint8_t textabflag : 1;
-    uint8_t c          : 4;
+    uint8_t ta         : 1;
+    uint8_t ms         : 1;
+    uint8_t di         : 1;
+    uint8_t c          : 2;
     uint16_t checkword : 10;
     uint8_t            : 6;
-} type2group_t;
+} type0groupb_t;
+
+typedef struct {
+    uint8_t grouptype      : 5;
+    uint8_t tp             : 1;
+    uint8_t pty            : 5;
+    uint8_t textab         : 1;
+    uint8_t segmentaddress : 4;
+    uint16_t checkword     : 10;
+    uint8_t                : 6;
+} type2groupb_t;
 
 typedef struct {
     uint8_t hichar     : 8;
     uint8_t lowchar    : 8;
     uint16_t checkword : 10;
     uint8_t            : 6;
-} radiotext_t;
+} type2groupcd_t;
 
 typedef union rbds_t {
-    block1_t block1;
-    type0group_t type0group;
-    type2group_t type2group;
-    radiotext_t radiotext;
+    groupa_t groupa;
+    type0groupb_t type0groupb;
+    type2groupb_t type2groupb;
+    type2groupcd_t type2groupcd;
+    uint32_t hex;
 } rbds_t;
 
 #include "spi.h"
 #include "uart.h"
 #include "lcd.h"
+#include "crc.h"
