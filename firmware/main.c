@@ -320,13 +320,13 @@ void mainEncodingTask(void) {
                 break;
             case 1:
                 // Fill each group B field with appropriate data
-                encRbdsBuffer[i].type2groupcd.grouptype = GROUP2A; // group type 2A, radiotext
-                encRbdsBuffer[i].type2groupcd.tp = FALSE; // No traffic announcements
-                encRbdsBuffer[i].type2groupcd.pty = NOPROGRAMTYPE; // No PTY sent to receiver
-                encRbdsBuffer[i].type2groupcd.textab = A; // Group type A
-                encRbdsBuffer[i].type2groupcd.segementaddress = encCurrentSegment;
+                encRbdsBuffer[i].type2groupb.grouptype = GROUP2A; // group type 2A, radiotext
+                encRbdsBuffer[i].type2groupb.tp = FALSE; // No traffic announcements
+                encRbdsBuffer[i].type2groupb.pty = NOPROGRAMTYPE; // No PTY sent to receiver
+                encRbdsBuffer[i].type2groupb.textab = A; // Group type A
+                encRbdsBuffer[i].type2groupb.segementaddress = encCurrentSegment;
                 // Compute group checksum
-                encRbdsBuffer[i].type2groupcd.checkword = crcChecksum(&encRbdsBuffer[i], OFFSETB);
+                encRbdsBuffer[i].type2groupb.checkword = crcChecksum(&encRbdsBuffer[i], OFFSETB);
                 break;
             case 2:
                 // Fill group c with two chars
