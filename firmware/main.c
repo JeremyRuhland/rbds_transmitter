@@ -262,22 +262,28 @@ void mainDataInputTask(void) {
     } else {
         // Check length of buffer
         for (msgIndex = 0; mainDataBuffer[msgIndex] != 0x00; msgIndex++) {}
+        msgIndex--;
         // msgIndex now contains length of buffer
-        // If message length not divisible by 4, add extra spaces at end of buffer until it is
+        // If message length not divisible by 4, add extra spaces at end of buffer until it is, end with \r
         msgPadBuffer = (msgIndex % 4);
         if (msgPadBuffer != 0) {
-            for (; msgPadBuffer <= 3; msgPadBuffer++) {
-                mainDataBuffer[msgIndex+msgPadBuffer] = ' ';
+            for (; msgPadBuffer <= 2; msgPadBuffer++) {
+                mainDataBuffer[msgIndex] = ' ';
+                msgIndex++;
             }
+            mainDataBuffer[msgIndex] = RETURN;
+            msgPadBuffer++;
             mainRbdsPacketLength = ((msgIndex+msgPadBuffer)/4);
-        // If zero length buffer, make 4 space chars
-        } else if (msgIndex == 0) {
+        // If zero length buffer or buffer divisible by 4 but less than 64 chars, make 3 space chars, end with \r
+        } else if (msgIndex != 64) {
             mainDataBuffer[0] = ' ';
             mainDataBuffer[1] = ' ';
             mainDataBuffer[3] = ' ';
-            mainDataBuffer[4] = ' ';
-            mainRbdsPacketLength = 1;
+            mainDataBuffer[4] = RETURN;
+            mainRbdsPacketLength = ((msgIndex+4)/4);
+        // If buffer already full, clobber last char with \r
         } else {
+            mainRbdsPacketBuffer[msgIndex-1] = RETURN;
             mainRbdsPacketLength = (msgIndex/4);
         }
         mainSystemState = ENCODING_MODE;
