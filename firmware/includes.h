@@ -39,6 +39,9 @@
 #define NOPROGRAMTYPE ((uint8_t) 0x00)
 #define A ((uint8_t) 0x00)
 
+#define PERIODDELAY 26.315
+#define COMPUTATIONTIME 2.14
+
 typedef enum {FREQUENCY_INPUT_MODE, DATA_INPUT_MODE, ENCODING_MODE, TRANSMISSION_MODE} mainSystemState_t;
 
 typedef struct {

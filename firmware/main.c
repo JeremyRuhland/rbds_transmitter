@@ -9,6 +9,7 @@
 
 // Function prototypes
 void mainGpioInit(void);
+void mainPwmInit(void);
 void mainLcdInit(void);
 void mainFrequencyInputTask(void);
 void mainDataInputTask(void);
@@ -63,6 +64,9 @@ void mainGpioInit(void) {
     PORTD |= ((1<<PD3) | (1<<PD5) | (1<<PD6));
     DDRD |= ((1<<PD1) | (1<<PD3) | (1<<PD5) | (1<<PD6));
     DDRB |= ((1<<PB1) | (1<<PB2) | (1<<PB3) | (1<<PB5));
+}
+
+void mainPwmInit(void) {
 }
 
 void mainLcdInit(void) {
@@ -377,7 +381,7 @@ void mainEncodingTask(void) {
             }
 
             // Advance to next bit position in element i of mainRbdsPacketBuffer
-            if (j == 8) {
+            if (j == 7) {
                 j = 0;
                 i++; // After 8 bits, move to next element in mainRbdsPacketBuffer array
             } else {
@@ -385,24 +389,78 @@ void mainEncodingTask(void) {
             }
         }
     }
+    
+    mainSystemState = TRANSMISSION_MODE;
 }
 
 /*******************************************************************************
 *
 *******************************************************************************/
 void mainTransmissionTask(void) {
-    dac_t encDac;
-    uint16_t encFrequency;
+    dac_t trxDac;
+    uint16_t trxFrequency;
+    uint8_t trxIncomingChar = 0x00;
+    uint16_t trxCurrentBufferBit;
+    uint8_t trxCurrentBufferByte;
+    uint16_t trxBufferBitLength;
+    uint8_t trxCurrentBitInByte;
+    uint8_t trxSinType;
+    uint8_t i;
     
-    PORTD &= ~(1<<PD1); // Turn on transmission circuits
-    _delay_ms(100);
+    DDRD &= ~(1<<PD1); // Turn on transmission circuits
 
-    encFrequency = mainTransitFrequency;
+    // Display frequency mode message
+    lcd_clrscr();
+    lcd_puts_P("Transmitting ");
+    lcd_data(0); // Print custom transmission char
+    lcd_gotoxy(0,1);
+    lcd_puts_P("Freq");
+    mainFrequencyInputLcdDisp();
+    
+    trxFrequency = mainTransitFrequency; // **** FIX THIS HERE ****
 
     // Set transmission frequency
-    encDac.bit.channel = CHA;
-    encDac.bit.gainstage = VREF;
-    encDac.bit.shutdown = STARTUP;
-    encDac.bit.data = encFrequency;
-    spiUpdateDac(encDac);
+    trxDac.bit.channel = CHA;
+    trxDac.bit.gainstage = VREF;
+    trxDac.bit.shutdown = STARTUP;
+    trxDac.bit.data = trxFrequency;
+    spiUpdateDac(trxDac);
+    
+    trxDac.bit.channel = CHB; // Get ready for transmitting data
+    
+    trxBufferBitLength = (((uint16_t) mainRbdsPacketLength) * 104); // Calculate how many bits we must transmit
+    trxCurrentBitInByte = 0;
+    trxCurrentBufferByte = 0;
+    
+    while (trxIncomingChar != BACKSPACE) {
+        trxIncomingChar = uartRx(); // Check if we need to exit
+        // Loop through for each bit we must transmit
+        for (trxCurrentBufferBit = 0; trxCurrentBufferBit <= trxBufferBitLength; trxCurrentBufferBit++) {
+            // Determine if we must transmit a 1 or 0
+            trxSinType = (mainRbdsPacketBuffer[trxCurrentBufferByte] & (0x80>>trxCurrentBitInByte));
+            
+            // Transmit all 31 bits of the sin wave, either positive or negative
+            for (i = 0; i <= 30; i++) {
+                if (trxSinType) {   
+                    trxDac.bit.data = pgm_read_word(&mainSinTablePos[i]);
+                } else {
+                    trxDac.bin.data = pgm_read_word(&mainSinTableNeg[i]);
+                }
+                
+                spiUpdateDac(trxDac); // Send new data to DAC
+                _delay_us(PERIODDELAY-COMPUTATIONTIME); // Delay until next sin wave segment is needed, adjust COMPUTATIONTIME as needed
+            }
+            
+            // Keep track of which byte and bit position each bit is stored in
+            if (trxCurrentBitInByte == 7) {
+                trxCurrentBitInByte = 0;
+                trxCurrentBufferByte++;
+            } else {
+                trxCurrentBitInByte++;
+            }
+        }
+    }
+
+    DDRD |= (1<<PD1); // Turn off transmission circuits
+    mainSystemState = FREQUENCY_INPUT_MODE;
 }
