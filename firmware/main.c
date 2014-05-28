@@ -15,7 +15,7 @@ void mainDataInputTask(void);
 void mainEncodingTask(void);
 void mainTransmissionTask(void);
 void mainFrequencyInputLcdDisp(void);
-void delayOneSec(void);
+void mainDelayOneSec(void);
 void mainDataInputLcdDisp(void);
 
 // Global variables
@@ -151,8 +151,9 @@ void mainFrequencyInputTask(void) {
         mainFrequencyBuffer[2] = '0';
         mainFrequencyBuffer[3] = '0';
         mainFrequencyBuffer[4] = '0';
+        // Let the user see their entry has been corrected
         mainFrequencyInputLcdDisp();
-        delayOneSec();
+        mainDelayOneSec();
     // If impossibly low frequency is requested, force higher frequency
     } else if (msgTransitFrequency < 7000) {
         msgTransitFrequency = 7000;
@@ -161,8 +162,9 @@ void mainFrequencyInputTask(void) {
         mainFrequencyBuffer[2] = '0';
         mainFrequencyBuffer[3] = '0';
         mainFrequencyBuffer[4] = '0';
+        // Let the user see their entry has been corrected
         mainFrequencyInputLcdDisp();
-        delayOneSec();
+        mainDelayOneSec();
     } else {}
     mainTransitFrequency = ((uint16_t) msgTransitFrequency);
 
@@ -180,7 +182,7 @@ void mainFrequencyInputLcdDisp(void) {
     lcd_putc(mainFrequencyBuffer[4]);
 }
 
-void delayOneSec(void) {
+void mainDelayOneSec(void) {
     uint8_t i;
     
     for (i = 0; i <= 9; i++) {
@@ -287,10 +289,10 @@ void mainDataInputLcdDisp(void) {
     if (mainDataBuffer[16] == 0x00) {
         lcd_puts(&mainDataBuffer[0]); // Print entire buffer onto lcd
     } else {
+        lcd_data(1); // Print left arrow char
         // Check length of buffer
         for (i = 0; mainDataBuffer[i] != 0x00; i++) {}
         // i now contains length of buffer
-        lcd_data(1); // Print left arrow char
         lcd_puts(&mainDataBuffer[i-15]); // Print to end of string from i
     }
 }
@@ -303,7 +305,7 @@ void mainDataInputLcdDisp(void) {
 void mainEncodingTask(void) {
     rbds_t encRbdsBuffer[mainRbdsPacketLength];
     uint8_t encLoopLength;
-    uint8_t i;
+    uint8_t i, j;
     uint8_t encBitLength;
     uint8_t encCurrentPacket;
     uint8_t encCurrentSegment = 0;
@@ -358,6 +360,7 @@ void mainEncodingTask(void) {
     // Differentially encode encRbdsBuffer and place into mainRbdsPacketBuffer
     encBitLength = (mainRbdsPacketLength-1);
     i = 0;
+    j = 0;
     // Go through each packet
     for (encCurrentPacket = 0; encCurrentPacket <= mainRbdsPacketLength; encCurrentPacket++) {
         // Go through each bit in each packet, MSB to LSB
@@ -366,13 +369,20 @@ void mainEncodingTask(void) {
             encWorkingBit = (encCurrentBit ^ encLastBit);
             encLastBit = encCurrentBit; // Set new last bit
 
+            // Clear or set appropriate bit in correct element of mainRbdsPacketBuffer
             if (encWorkingBit == 0) {
-            
+                mainRbdsPacketBuffer[i] = (mainRbdsPacketBuffer[i] & ~(1<<j));
             } else {
-            
+                mainRbdsPacketBuffer[i] = (mainRbdsPacketBuffer[i] | (1<<j));
             }
-            
-            mainRbdsPacketBuffer[i] = mainRbdsPacketBuffer[i]
+
+            // Advance to next bit position in element i of mainRbdsPacketBuffer
+            if (j == 8) {
+                j = 0;
+                i++; // After 8 bits, move to next element in mainRbdsPacketBuffer array
+            } else {
+                j++;
+            }
         }
     }
 }
