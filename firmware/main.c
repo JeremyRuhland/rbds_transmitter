@@ -444,7 +444,7 @@ void mainTransmissionTask(void) {
                 if (trxSinType) {   
                     trxDac.bit.data = pgm_read_word(&mainSinTablePos[i]);
                 } else {
-                    trxDac.bin.data = pgm_read_word(&mainSinTableNeg[i]);
+                    trxDac.bit.data = pgm_read_word(&mainSinTableNeg[i]);
                 }
                 
                 spiUpdateDac(trxDac); // Send new data to DAC
