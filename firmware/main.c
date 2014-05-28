@@ -304,9 +304,13 @@ void mainEncodingTask(void) {
     rbds_t encRbdsBuffer[mainRbdsPacketLength];
     uint8_t encLoopLength;
     uint8_t i;
-    uint16_t encBitLength;
-    uint16_t encCurrentBit;
+    uint8_t encBitLength;
+    uint8_t encCurrentPacket;
     uint8_t encCurrentSegment = 0;
+    uint8_t encCurrentBitOffset;
+    uint8_t encLastBit = 0;
+    uint8_t encCurrentBit;
+    uint8_t encWorkingBit;
     
     encLoopLength = ((mainRbdsPacketLength*4)-1);
     
@@ -351,11 +355,25 @@ void mainEncodingTask(void) {
         }
     }
     
-    encBitLength = ((((uint16_t) mainRbdsPacketLength)*104)-1);
     // Differentially encode encRbdsBuffer and place into mainRbdsPacketBuffer
-    for (encCurrentBit = 0; encCurrentBit <= encBitLength; encCurrentBit++) {
-        i = ((encCurrentBit+1)/32); // calculate which element of encRbdsBuffer is being worked on
-        
+    encBitLength = (mainRbdsPacketLength-1);
+    i = 0;
+    // Go through each packet
+    for (encCurrentPacket = 0; encCurrentPacket <= mainRbdsPacketLength; encCurrentPacket++) {
+        // Go through each bit in each packet, MSB to LSB
+        for (encCurrentBitOffset = 31; encCurrentBitOffset <= 6; encCurrentBitOffset--) {
+            encCurrentBit = ((uint8_t) ((encRbdsBuffer[encCurrentPacket].hex >> encCurrentBitOffset) & ((uint32_t) 0x01))); // get current bit, 0 or 1
+            encWorkingBit = (encCurrentBit ^ encLastBit);
+            encLastBit = encCurrentBit; // Set new last bit
+
+            if (encWorkingBit == 0) {
+            
+            } else {
+            
+            }
+            
+            mainRbdsPacketBuffer[i] = mainRbdsPacketBuffer[i]
+        }
     }
 }
 
