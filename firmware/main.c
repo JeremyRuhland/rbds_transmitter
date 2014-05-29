@@ -67,12 +67,14 @@ void mainGpioInit(void) {
 }
 
 void mainPwmInit(void) {
+    PRR |= ((1<<PRTWI)|(1<<PRTIM2)|(1<<PRTIM0)|(1<<PRTIM1)|(1<<PRADC)); // Power down unused modules and pwm stuff
     // 57khz 0c1a
-    // Phase & frequency correct PWM mode
+    // 
     TCCR1A |= ((1<<)|(1<<));
 
     // 19khz 0c1b
     TCCR1B |= ((1<<COM1B0)|());
+
     // 26khz 0c2b
     
 }
