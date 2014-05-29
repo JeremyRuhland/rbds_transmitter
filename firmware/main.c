@@ -419,7 +419,11 @@ void mainEncodingTask(void) {
 }
 
 /*******************************************************************************
-*
+* Transmission task, turns on transmission hardware and loops through packet   *
+* buffer, checking each bit in turn. Positive or negative sin waves are        *
+* generated and sent to the transmission hardware.                             *
+*                                                                              *
+* Modifies global variable mainSystemState                                     *
 *******************************************************************************/
 void mainTransmissionTask(void) {
     dac_t trxDac;
