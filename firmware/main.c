@@ -18,6 +18,7 @@ void mainTransmissionTask(void);
 void mainFrequencyInputLcdDisp(void);
 void mainDelayOneSec(void);
 void mainDataInputLcdDisp(void);
+void mainPwmControl(uint8_t command);
 
 // Global variables
 #include "sintables.txt"
@@ -68,15 +69,22 @@ void mainGpioInit(void) {
 
 void mainPwmInit(void) {
     PRR |= ((1<<PRTWI)|(1<<PRTIM2)|(1<<PRTIM0)|(1<<PRTIM1)|(1<<PRADC)); // Power down unused modules and pwm stuff
-    // 57khz 0c1a
-    // 
-    TCCR1A |= ((1<<)|(1<<));
-
-    // 19khz 0c1b
-    TCCR1B |= ((1<<COM1B0)|());
-
-    // 26khz 0c2b
+        
+    // 57khz 0c0a, 8, 0x23
+    TCCR0A |= ((1<<COM0A0)|(1<<WGM01)); // Toggle 0c0a on cmp match, ctc mode
+    TCCR0B |= (1<<CS00); // prescaler 1
+    OCR0A = 139;
     
+    // 19khz 0c1b
+    TCCR1A |= (1<<COM1B0); // Toggle 0c1b on cmp match, ctc mode
+    TCCR1B |= ((1<<WGM12)|(1<<CS10)); // ctc mode, prescaler 1
+    OCR1AH = ((uint8_t) (420>>8));
+    OCR1AL = ((uint8_t) 420);
+    
+    // ~26khz 0c2b
+    TCCR2A |= ((1<<COM2B0)|(1<<WGM21)); // Toggle 0c2b on cmp match, ctc mode
+    TCCR2B |= (1<<CS21); // prescaler 8
+    OCR2A = 37;
 }
 
 void mainLcdInit(void) {
@@ -423,7 +431,7 @@ void mainTransmissionTask(void) {
     uint8_t trxSinType;
     uint8_t i;
     
-    DDRD &= ~(1<<PD1); // Turn on transmission circuits
+    mainPwmControl(STARTTHEMUSIC); // Start the music
 
     // Display frequency mode message
     lcd_clrscr();
@@ -456,17 +464,22 @@ void mainTransmissionTask(void) {
             trxSinType = (mainRbdsPacketBuffer[trxCurrentBufferByte] & (0x80>>trxCurrentBitInByte));
             
             // Transmit all 31 bits of the sin wave, either positive or negative
-            for (i = 0; i <= 30; i++) {
-                if (trxSinType) {   
-                    trxDac.bit.data = pgm_read_word(&mainSinTablePos[i]);
-                } else {
-                    trxDac.bit.data = pgm_read_word(&mainSinTableNeg[i]);
+            // Positive wave
+            if (trxSinType) {
+                for (i = 0; i <= 30; i++) {
+                    trxDac.bit.data = pgm_read_word(&mainSinTable[i]);
+                    spiUpdateDac(trxDac); // Send new data to DAC
+                    _delay_us(PERIODDELAY-COMPUTATIONTIME); // Delay until next sin wave segment is needed, adjust COMPUTATIONTIME as needed
                 }
-                
-                spiUpdateDac(trxDac); // Send new data to DAC
-                _delay_us(PERIODDELAY-COMPUTATIONTIME); // Delay until next sin wave segment is needed, adjust COMPUTATIONTIME as needed
+            // Negative wave
+            } else {
+                for (i = 32; i >= 1; i--) {
+                    trxDac.bit.data = pgm_read_word(&mainSinTable[i]);
+                    spiUpdateDac(trxDac); // Send new data to DAC
+                    _delay_us(PERIODDELAY-COMPUTATIONTIME); // Delay until next sin wave segment is needed, adjust COMPUTATIONTIME as needed
+                }
             }
-            
+                        
             // Keep track of which byte and bit position each bit is stored in
             if (trxCurrentBitInByte == 7) {
                 trxCurrentBitInByte = 0;
@@ -477,6 +490,14 @@ void mainTransmissionTask(void) {
         }
     }
 
-    DDRD |= (1<<PD1); // Turn off transmission circuits
+    mainPwmControl(STOPTHEMUSIC);
     mainSystemState = FREQUENCY_INPUT_MODE;
+}
+
+void mainPwmControl(uint8_t command) {
+    if (command == STARTTHEMUSIC) {
+        DDRD &= ~(1<<PD1); // Turn on transmission circuits
+    } else {
+        DDRD |= (1<<PD1); // Turn off transmission circuits
+    }
 }

@@ -39,6 +39,9 @@
 #define NOPROGRAMTYPE ((uint8_t) 0x00)
 #define A ((uint8_t) 0x00)
 
+#define STARTTHEMUSIC ((uint8_t) 0x01)
+#define STOPTHEMUSIC ((uint8_t) 0x00)
+
 #define PERIODDELAY 26.315
 #define COMPUTATIONTIME 2.14
 
