@@ -20385,8 +20385,8 @@ General-purpose diode for high-speed switching</description>
 </segment>
 <segment>
 <pinref part="U5" gate="G$1" pin="PB1(OC1A)"/>
-<wire x1="88.9" y1="33.02" x2="101.6" y2="33.02" width="0.1524" layer="91"/>
-<label x="101.6" y="33.02" size="1.27" layer="95" xref="yes"/>
+<wire x1="88.9" y1="33.02" x2="91.44" y2="33.02" width="0.1524" layer="91"/>
+<label x="91.44" y="33.02" size="1.27" layer="95" xref="yes"/>
 </segment>
 </net>
 <net name="!DAC_CS" class="0">
@@ -20548,8 +20548,8 @@ General-purpose diode for high-speed switching</description>
 </segment>
 <segment>
 <pinref part="U5" gate="G$1" pin="PD6(AIN0)"/>
-<wire x1="88.9" y1="43.18" x2="101.6" y2="43.18" width="0.1524" layer="91"/>
-<label x="101.6" y="43.18" size="1.27" layer="95" xref="yes"/>
+<wire x1="88.9" y1="43.18" x2="91.44" y2="43.18" width="0.1524" layer="91"/>
+<label x="91.44" y="43.18" size="1.27" layer="95" xref="yes"/>
 </segment>
 </net>
 <net name="N$10" class="0">
