@@ -29,7 +29,7 @@ void spiUpdateDac(dac_t dacdata) {
 
     // Rising edge on latch, delay and drop
     _delay_us(0.04); // Delay 40nS
-    PORTD &= ~(1<<PD6);
+    PORTB &= ~(1<<PB1);
     _delay_us(0.1); // Delay 100nS
-    PORTD |= (1<<PD6);
+    PORTB |= (1<<PB1);
 }
