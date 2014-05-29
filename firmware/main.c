@@ -15,6 +15,7 @@ void mainFrequencyInputTask(void);
 void mainDataInputTask(void);
 void mainEncodingTask(void);
 void mainTransmissionTask(void);
+uint16_t mainFrequencyConverter(uint16_t frequency);
 void mainFrequencyInputLcdDisp(void);
 void mainDelayOneSec(void);
 void mainDataInputLcdDisp(void);
@@ -68,7 +69,7 @@ void mainGpioInit(void) {
 }
 
 void mainPwmInit(void) {
-    PRR |= ((1<<PRTWI)|(1<<PRTIM2)|(1<<PRTIM0)|(1<<PRTIM1)|(1<<PRADC)); // Power down unused modules and pwm stuff
+    PRR |= ((1<<PRTWI)|(1<<PRTIM2)|(1<<PRTIM0)|(1<<PRTIM1)|(1<<PRADC)); // Power down unused modules, put pwm to sleep
         
     // 57khz 0c0a, 8, 0x23
     TCCR0A |= ((1<<COM0A0)|(1<<WGM01)); // Toggle 0c0a on cmp match, ctc mode
@@ -422,7 +423,6 @@ void mainEncodingTask(void) {
 *******************************************************************************/
 void mainTransmissionTask(void) {
     dac_t trxDac;
-    uint16_t trxFrequency;
     uint8_t trxIncomingChar = 0x00;
     uint16_t trxCurrentBufferBit;
     uint8_t trxCurrentBufferByte;
@@ -440,14 +440,12 @@ void mainTransmissionTask(void) {
     lcd_gotoxy(0,1);
     lcd_puts_P("Freq");
     mainFrequencyInputLcdDisp();
-    
-    trxFrequency = mainTransitFrequency; // **** FIX THIS HERE ****
 
     // Set transmission frequency
     trxDac.bit.channel = CHA;
-    trxDac.bit.gainstage = VREF;
+    trxDac.bit.gainstage = TWOVREF;
     trxDac.bit.shutdown = STARTUP;
-    trxDac.bit.data = trxFrequency;
+    trxDac.bit.data = mainFrequencyConverter(mainTransitFrequency);
     spiUpdateDac(trxDac);
     
     trxDac.bit.channel = CHB; // Get ready for transmitting data
@@ -494,10 +492,23 @@ void mainTransmissionTask(void) {
     mainSystemState = FREQUENCY_INPUT_MODE;
 }
 
+uint16_t mainFrequencyConverter(uint16_t frequency) {
+    uint32_t frequencyHertz;
+
+    // Convert binary frequency number into setting for dac
+    frequencyHertz = (((uint32_t) frequency) * 10000);
+    frequencyHertz -= FREERUNNINGFREQUENCY; // Take difference from freerunning freq of vco
+    frequencyHertz /= HZPERMV; // Calculate how many mV are needed to alter freq by this many hz
+    
+    return ((uint16_t) frequencyHertz);
+}
+
 void mainPwmControl(uint8_t command) {
     if (command == STARTTHEMUSIC) {
         DDRD &= ~(1<<PD1); // Turn on transmission circuits
+        PRR &= ~((1<<PRTIM0)|(1<<PRTIM1)|(1<<PRTIM2)); // Power up pwm modules
     } else {
         DDRD |= (1<<PD1); // Turn off transmission circuits
+        PRR |= ((1<<PRTIM0)|(1<<PRTIM1)|(1<<PRTIM2)); // Power down pwm modules
     }
 }

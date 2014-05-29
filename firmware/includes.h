@@ -24,6 +24,8 @@
 #define TWOVREF ((uint8_t) 0)
 #define STARTUP ((uint8_t) 1)
 #define SHUTDOWN ((uint8_t) 0)
+#define HZPERMV ((uint16_t) 5225)
+#define FREERUNNINGFREQUENCY ((uint32_t) 40000000)
 
 #define PICODE ((uint16_t) 0x54a8)
 #define PICODECHECKWORD ((uint16_t) 0x0000)
