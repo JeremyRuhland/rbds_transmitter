@@ -67,6 +67,14 @@ void mainGpioInit(void) {
 }
 
 void mainPwmInit(void) {
+    // 57khz 0c1a
+    // Phase & frequency correct PWM mode
+    TCCR1A |= ((1<<)|(1<<));
+
+    // 19khz 0c1b
+    TCCR1B |= ((1<<COM1B0)|());
+    // 26khz 0c2b
+    
 }
 
 void mainLcdInit(void) {
