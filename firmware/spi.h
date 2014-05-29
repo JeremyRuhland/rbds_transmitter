@@ -5,10 +5,8 @@
 *                                                                             *
 * (void) spiInit(void)                  Function initializes SPI system into  *
 *                                       0,0 (clock idles low), LSB first      *
-*                                       master mode at 1Mhz.                  *
-* (uint8_t) spiByte(uint8_t)            Function exchanges byte, returns      *
-*                                       value left in SPI Rx buffer. Blocks   *
-*                                       until Tx complete.                    *
+*                                       master mode at 8Mhz.                  *
+* (void) spiUpdateDac(dac_t)            Function sends data structure to dac  *
 *                                                                             *
 ******************************************************************************/
 

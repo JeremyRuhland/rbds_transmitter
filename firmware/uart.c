@@ -1,5 +1,8 @@
 #include "includes.h"
 
+#define UART_BAUD 9600
+#define UART_BAUD_CODE ((uint16_t) ((F_CPU/16/UART_BAUD)-1))
+
 void uartInit(void) {
     // Flush buffer
     UDR0 = 0x00;

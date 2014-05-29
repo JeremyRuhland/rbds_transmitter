@@ -142,7 +142,7 @@ void mainFrequencyInputTask(void) {
                 }
                 // msgIndex now at 5, for loop will exit and convert string to binary
             } else {}
-        } else if (msgIndex <= 4 && msgIncomingChar >= '0' && msgIncomingChar <= '9') {
+        } else if ((msgIndex <= 4) && (msgIncomingChar >= '0') && (msgIncomingChar <= '9')) {
             // If 0-9 input, fill element in buffer array
             mainFrequencyBuffer[msgIndex] = msgIncomingChar;
         } else if (msgIndex > 0 && msgIncomingChar == BACKSPACE) {
@@ -206,9 +206,9 @@ void mainFrequencyInputLcdDisp(void) {
 }
 
 void mainDelayOneSec(void) {
-    uint8_t i;
+    uint8_t delayCnt;
     
-    for (i = 0; i <= 9; i++) {
+    for (delayCnt = 0; delayCnt <= 9; delayCnt++) {
         _delay_ms(100);
     }
 }
@@ -311,7 +311,7 @@ void mainDataInputTask(void) {
 
 void mainDataInputLcdDisp(void) {
     // Show latest 15 chars of buffer on display
-    uint8_t i;
+    uint8_t bufferLength;
     
     lcd_gotoxy(0, 1); // Move cursor to beginning of second line
     // Check if msg exceeds 16 chars
@@ -320,9 +320,9 @@ void mainDataInputLcdDisp(void) {
     } else {
         lcd_data(1); // Print left arrow char
         // Check length of buffer
-        for (i = 0; mainDataBuffer[i] != 0x00; i++) {}
-        // i now contains length of buffer
-        lcd_puts(&mainDataBuffer[i-15]); // Print to end of string from i
+        for (bufferLength = 0; mainDataBuffer[bufferLength] != 0x00; bufferLength++) {}
+        // bufferLength now contains length of buffer
+        lcd_puts(&mainDataBuffer[bufferLength-15]); // Print to end of string from bufferLength
     }
 }
 
@@ -334,7 +334,8 @@ void mainDataInputLcdDisp(void) {
 void mainEncodingTask(void) {
     rbds_t encRbdsBuffer[mainRbdsPacketLength];
     uint8_t encLoopLength;
-    uint8_t i, j;
+    uint8_t encBufferCount;
+    uint8_t encBitCount;
     uint8_t encBitLength;
     uint8_t encCurrentPacket;
     uint8_t encCurrentSegment = 0;
@@ -346,40 +347,40 @@ void mainEncodingTask(void) {
     encLoopLength = ((mainRbdsPacketLength*4)-1);
     
     // Stuff fields
-    for (i = 0; i <= encLoopLength; i++) {
-        switch (i % 4) {
+    for (encBufferCount = 0; encBufferCount <= encLoopLength; encBufferCount++) {
+        switch (encBufferCount % 4) {
             case 0:
                 // Fill each group A field with premade data
-                encRbdsBuffer[i].groupa.picode = PICODE;
-                encRbdsBuffer[i].groupa.checkword = PICODECHECKWORD;
+                encRbdsBuffer[encBufferCount].groupa.picode = PICODE;
+                encRbdsBuffer[encBufferCount].groupa.checkword = PICODECHECKWORD;
                 break;
             case 1:
                 // Fill each group B field with appropriate data
-                encRbdsBuffer[i].type2groupb.grouptype = GROUP2A; // group type 2A, radiotext
-                encRbdsBuffer[i].type2groupb.tp = FALSE; // No traffic announcements
-                encRbdsBuffer[i].type2groupb.pty = NOPROGRAMTYPE; // No PTY sent to receiver
-                encRbdsBuffer[i].type2groupb.textab = A; // Group type A
-                encRbdsBuffer[i].type2groupb.segmentaddress = encCurrentSegment;
+                encRbdsBuffer[encBufferCount].type2groupb.grouptype = GROUP2A; // group type 2A, radiotext
+                encRbdsBuffer[encBufferCount].type2groupb.tp = FALSE; // No traffic announcements
+                encRbdsBuffer[encBufferCount].type2groupb.pty = NOPROGRAMTYPE; // No PTY sent to receiver
+                encRbdsBuffer[encBufferCount].type2groupb.textab = A; // Group type A
+                encRbdsBuffer[encBufferCount].type2groupb.segmentaddress = encCurrentSegment;
                 // Compute group checksum
-                encRbdsBuffer[i].type2groupb.checkword = crcChecksum(&encRbdsBuffer[i], OFFSETB);
+                encRbdsBuffer[encBufferCount].type2groupb.checkword = crcChecksum(&encRbdsBuffer[encBufferCount], OFFSETB);
                 break;
             case 2:
                 // Fill group c with two chars
-                encRbdsBuffer[i].type2groupcd.hichar = mainDataBuffer[encCurrentSegment];
+                encRbdsBuffer[encBufferCount].type2groupcd.hichar = mainDataBuffer[encCurrentSegment];
                 encCurrentSegment++;
-                encRbdsBuffer[i].type2groupcd.lowchar = mainDataBuffer[encCurrentSegment];
+                encRbdsBuffer[encBufferCount].type2groupcd.lowchar = mainDataBuffer[encCurrentSegment];
                 encCurrentSegment++;
                 // Compute group checksum
-                encRbdsBuffer[i].type2groupcd.checkword = crcChecksum(&encRbdsBuffer[i], OFFSETC);
+                encRbdsBuffer[encBufferCount].type2groupcd.checkword = crcChecksum(&encRbdsBuffer[encBufferCount], OFFSETC);
                 break;
             case 3:
                 // Fill group d with two chars
-                encRbdsBuffer[i].type2groupcd.hichar = mainDataBuffer[encCurrentSegment];
+                encRbdsBuffer[encBufferCount].type2groupcd.hichar = mainDataBuffer[encCurrentSegment];
                 encCurrentSegment++;
-                encRbdsBuffer[i].type2groupcd.lowchar = mainDataBuffer[encCurrentSegment];
+                encRbdsBuffer[encBufferCount].type2groupcd.lowchar = mainDataBuffer[encCurrentSegment];
                 encCurrentSegment++;
                 // Compute group checksum
-                encRbdsBuffer[i].type2groupcd.checkword = crcChecksum(&encRbdsBuffer[i], OFFSETD);
+                encRbdsBuffer[encBufferCount].type2groupcd.checkword = crcChecksum(&encRbdsBuffer[encBufferCount], OFFSETD);
                 break;
             default :
                 break;
@@ -388,8 +389,8 @@ void mainEncodingTask(void) {
     
     // Differentially encode encRbdsBuffer and place into mainRbdsPacketBuffer
     encBitLength = (mainRbdsPacketLength-1);
-    i = 0;
-    j = 0;
+    encBufferCount = 0;
+    encBitCount = 0;
     // Go through each packet
     for (encCurrentPacket = 0; encCurrentPacket <= mainRbdsPacketLength; encCurrentPacket++) {
         // Go through each bit in each packet, MSB to LSB
@@ -400,17 +401,17 @@ void mainEncodingTask(void) {
 
             // Clear or set appropriate bit in correct element of mainRbdsPacketBuffer
             if (encWorkingBit == 0) {
-                mainRbdsPacketBuffer[i] = (mainRbdsPacketBuffer[i] & ~(1<<j));
+                mainRbdsPacketBuffer[encBufferCount] = (mainRbdsPacketBuffer[encBufferCount] & ~(1<<encBitCount));
             } else {
-                mainRbdsPacketBuffer[i] = (mainRbdsPacketBuffer[i] | (1<<j));
+                mainRbdsPacketBuffer[encBufferCount] = (mainRbdsPacketBuffer[encBufferCount] | (1<<encBitCount));
             }
 
-            // Advance to next bit position in element i of mainRbdsPacketBuffer
-            if (j == 7) {
-                j = 0;
-                i++; // After 8 bits, move to next element in mainRbdsPacketBuffer array
+            // Advance to next bit position in element encBufferCount of mainRbdsPacketBuffer
+            if (encBitCount == 7) {
+                encBitCount = 0;
+                encBufferCount++; // After 8 bits, move to next element in mainRbdsPacketBuffer array
             } else {
-                j++;
+                encBitCount++;
             }
         }
     }

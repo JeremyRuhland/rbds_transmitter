@@ -8,7 +8,6 @@
 #include <avr/io.h>
 #include <util/delay.h>
 #include <avr/interrupt.h>
-#include <util/crc16.h>
 #include <avr/pgmspace.h>
 #include <avr/sleep.h>
 
@@ -105,6 +104,7 @@ typedef union rbds_t {
     uint32_t hex;
 } rbds_t;
 
+// These includes require some structs defined above
 #include "spi.h"
 #include "uart.h"
 #include "lcd.h"
