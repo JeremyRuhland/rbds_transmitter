@@ -8,7 +8,7 @@
 * 
 * Originally the 9S12 LCD module from Andrew Pace, 2/6/99, ET 454 
 * MOdified for the K70. Todd Morton, 2/24/2013 
-* Modified for AVR Jeremy Ruhland 6/2/14
+* Modified for avr Jeremy Ruhland & Oneil Kwangwanh 5/2014 
 ********************************************************************
 * Master Include File  
 *******************************************************************/
@@ -19,16 +19,15 @@
 *******************************************************************/
 #define LCD_RS_BIT     (1<<PC4)
 #define LCD_E_BIT      (1<<PC5)
-#define LCD_DB_MASK	   0x0F
+#define LCD_DB_MASK	   0x0f
 #define LCD_PORT       PORTC
 #define LCD_PORT_DIR   DDRC
 #define INIT_BIT_DIR() (LCD_PORT_DIR |= (LCD_RS_BIT|LCD_E_BIT|LCD_DB_MASK))
-#define LCD_SET_RS()   PORTC |= LCD_RS_BIT
-#define LCD_CLR_RS()   PORTC &= ~LCD_RS_BIT
-#define LCD_SET_E()    PORTC |= LCD_E_BIT
-#define LCD_CLR_E()    PORTC &= ~LCD_E_BIT
-#define LCD_WR_DB(nib) (PORTC = (PORTC & ~LCD_DB_MASK)|((nib)<<0))
-
+#define LCD_SET_RS()   LCD_PORT |= LCD_RS_BIT
+#define LCD_CLR_RS()   LCD_PORT &= ~(LCD_RS_BIT)
+#define LCD_SET_E()    LCD_PORT |= LCD_E_BIT
+#define LCD_CLR_E()    LCD_PORT &= ~(LCD_E_BIT)
+#define LCD_WR_DB(nib) (LCD_PORT = (LCD_PORT & ~LCD_DB_MASK)|((nib)<<0))
 
 /********************************************************************
 * LCD Defines                                                 *
@@ -38,6 +37,7 @@
 #define LCD_SHIFT_CUR 0x06    /*Increments cursor addr after write.*/
 #define LCD_DIS_INIT  0x0C    /*Display: on. Cursor: off. Blink: off */
 #define LCD_CLR_CMD   0x01    /*Clear display and move cursor home */
+
 #define LCD_LINE1_ADDR 0x80   /* Display address for line1 column1 */
 #define LCD_LINE2_ADDR 0xC0   /* Display address for line2 column1 */
 #define LCD_BS_CMD     0x10   /* Move cursor left one space */
@@ -48,75 +48,44 @@
 ********************************************************************/
 void LcdInit(void);
 void LcdClrDisp(void);
-void LcdClrLine(uint8_t line);
-void LcdDispChar(uint8_t c);
-void LcdDispByte(uint8_t *b);
-void LcdDispStrg(uint8_t *s);
-void LcdMoveCursor(uint8_t row, uint8_t col);
-void LcdDispDecByte(uint8_t *b, uint8_t lz);
-void LcdDispTime(uint8_t hrs, uint8_t mins, uint8_t secs);
-void LcdCursor(uint8_t on, uint8_t blink);
+void LcdClrLine(INT8U line);
+void LcdDispChar(INT8U c);
+void LcdDispByte(INT8U *b);
+void LcdDispStrg(INT8U *s);
+void LcdMoveCursor(INT8U row, INT8U col);
+void LcdDispDecByte(INT8U *b, INT8U lz);
+void LcdDispTime(INT8U hrs, INT8U mins, INT8U secs);
+void LcdCursor(INT8U on, INT8U blink);
 void LcdBSpace(void);
 void LcdFSpace(void);
 
 /* Private */
-static void LcdWrCmd(uint8_t cmd);
-static void LcdDly500ns(void);
-//#define LcdDly500ns() _delay_us(0.5)
-static void LcdDly40us(void);
-//#define LcdDly40us _delay_us(40)
-static void LcdDlyms(uint8_t ms);
+static void LcdWrCmd(INT8U cmd);
 static const uint8_t mainCustomChars[] PROGMEM = {0x0e, 0x11, 0x04, 0x0A, 0x00, 0x04, 0x04, 0x04, 0x00, 0x02, 0x06, 0x0e, 0x06, 0x02, 0x00, 0x00};
+
 /********************************************************************
 * Function Definitions
 *********************************************************************
-* LcdWrCmd(uint8_t cmd) - Private
+* LcdWrCmd(INT8U cmd) - Private
 *
 *  PARAMETERS: cmd - Command to be sent to the LCD
 *
 *  DESCRIPTION: Sends a command write sequence to the LCD
 *
 ********************************************************************/
-static void LcdWrCmd(uint8_t cmd) {
+static void LcdWrCmd(INT8U cmd) {
       LCD_CLR_RS();				//Select command
       LCD_WR_DB(cmd>>4);		//Out most sig nibble
       LCD_SET_E();				//Pulse E. 230ns min per Seiko doc
-      LcdDly500ns();
+      _delay_us(1);
       LCD_CLR_E();
-      LcdDly500ns();			//Wait >1us per Seiko doc
-      LcdDly500ns();
+      _delay_us(1);			//Wait >1us per Seiko doc
       LCD_WR_DB((cmd&0x0f));	//Out least sig nibble
       LCD_SET_E();				//Pulse E
-      LcdDly500ns();
+      _delay_us(1);
       LCD_CLR_E();
-      LcdDly40us();				//Wait 40us per Seiko doc
+      _delay_us(40);				//Wait 40us per Seiko doc
       LCD_SET_RS();				//Set back to data
-}
-
-/********************************************************************
-* Function Definitions
-*********************************************************************
-* LcdWrDat(uint8_t cmd) - Private
-*
-*  PARAMETERS: cmd - Data to be sent to the LCD
-*
-*  DESCRIPTION: Sends a data write sequence to the LCD
-*
-********************************************************************/
-static void LcdWrDat(uint8_t cmd) {
-      LCD_SET_RS();				//Select data
-      LCD_WR_DB(cmd>>4);		//Out most sig nibble
-      LCD_SET_E();				//Pulse E. 230ns min per Seiko doc
-      LcdDly500ns();
-      LCD_CLR_E();
-      LcdDly500ns();			//Wait >1us per Seiko doc
-      LcdDly500ns();
-      LCD_WR_DB((cmd&0x0f));	//Out least sig nibble
-      LCD_SET_E();				//Pulse E
-      LcdDly500ns();
-      LCD_CLR_E();
-      LcdDly40us();				//Wait 40us per Seiko doc
-      LCD_CLR_RS();				//Set back to data
 }
 
 /********************************************************************
@@ -130,59 +99,46 @@ static void LcdWrDat(uint8_t cmd) {
 *
 ********************************************************************/
 void LcdInit(void) {
-    uint8_t i;
-    
-	//PORTD_PCR1=(0|PORT_PCR_MUX(1));
-	//PORTD_PCR2=(0|PORT_PCR_MUX(1));
-	//PORTD_PCR3=(0|PORT_PCR_MUX(1));
-	//PORTD_PCR4=(0|PORT_PCR_MUX(1));
-	//PORTD_PCR5=(0|PORT_PCR_MUX(1));
-	//PORTD_PCR6=(0|PORT_PCR_MUX(1));
-    
+   
+	LCD_PORT_DIR = 0xFF;
 	INIT_BIT_DIR();
     LCD_CLR_E(); 
     LCD_SET_RS();           /*Data select unless in LcdWrCmd()  */
-    LcdDlyms(15);  	        /* LCD requires 15ms delay at powerup */ 
+    _delay_ms(15);  	        /* LCD requires 15ms delay at powerup */ 
    
     LCD_CLR_RS();		    /*Send first command for RESET sequence*/
     LCD_WR_DB(0x3);
     LCD_SET_E();
-    LcdDly500ns();
+    _delay_us(1);
     LCD_CLR_E();
-    LcdDlyms(5);		    /*Wait >4.1ms */ 
+    _delay_ms(5);		    /*Wait >4.1ms */ 
   
     LCD_WR_DB(0x3);	        /*Repeat */
     LCD_SET_E();
-    LcdDly500ns();
+    _delay_us(1);
     LCD_CLR_E();
-    LcdDlyms(1); 		    /*Wait >100us */
+    _delay_ms(1); 		    /*Wait >100us */
   
     LCD_WR_DB(0x3);	        /* Repeat */
     LCD_SET_E();
-    LcdDly500ns();
+    _delay_us(1);
     LCD_CLR_E();
-    LcdDly40us(); 		    /*Wait >40us*/
+    _delay_us(40); 		    /*Wait >40us*/
   
     LCD_WR_DB(0x2);	        /*Send last command for RESET sequence*/
     LCD_SET_E();
-    LcdDly500ns();
+    _delay_us(1);
     LCD_CLR_E();
-    LcdDly40us(); 
+    _delay_us(40); 
   
     LcdWrCmd(LCD_DAT_INIT);	    /*Send command for 4-bit mode */
     LcdWrCmd(LCD_SHIFT_CUR);
     LcdWrCmd(LCD_DIS_INIT);
     LcdClrDisp();
-    
-    LcdWrCmd(0x40); // Write custom chars
-    for (i = 0; i < 16; i++) {
-        LcdWrDat(pgm_read_byte(&mainCustomChars[i]));
-    }
-    
 } 
 
 /********************************************************************
-** LcdDispChar(uint8_t c) - Public
+** LcdDispChar(INT8U c) - Public
 *
 *  PARAMETERS: c - ASCII character to be sent to the LCD
 *
@@ -190,18 +146,17 @@ void LcdInit(void) {
 *               that the LCD port is configured for a data write.
 *
 ********************************************************************/
-void LcdDispChar(uint8_t c) {
+void LcdDispChar(INT8U c) {
     LCD_WR_DB((c>>4));
     LCD_SET_E();
-    LcdDly500ns();
+    _delay_us(1);
     LCD_CLR_E();
-    LcdDly500ns();
-    LcdDly500ns();
+    _delay_us(1);
     LCD_WR_DB((c&0x0f));
     LCD_SET_E();
-    LcdDly500ns();
+    _delay_us(1);
     LCD_CLR_E();
-    LcdDly40us();
+    _delay_us(40);
 }
 
 /********************************************************************
@@ -216,7 +171,7 @@ void LcdDispChar(uint8_t c) {
 void LcdClrDisp(void) {
 
     LcdWrCmd(LCD_CLR_CMD);
-    LcdDlyms(2);
+    _delay_ms(2);
 }
 
 /********************************************************************
@@ -228,10 +183,10 @@ void LcdClrDisp(void) {
 *               returns the cursor to column 1 of that line.
 *
 ********************************************************************/
-void LcdClrLine (uint8_t line) {
+void LcdClrLine (INT8U line) {
   
-   uint8_t start_addr; 
-   uint8_t i;
+   INT8U start_addr; 
+   INT8U i;
 
    if(line == 1){ 
       start_addr = LCD_LINE1_ADDR;  
@@ -248,16 +203,16 @@ void LcdClrLine (uint8_t line) {
 }
  
 /********************************************************************
-* LcdDispByte(uint8_t *b)
+* LcdDispByte(INT8U *b)
 *
 *  PARAMETERS: *b - pointer to the byte to be displayed.
 *
 *  DESCRIPTION: Displays the byte pointed to by b in hex.
 *
 ********************************************************************/
-void LcdDispByte(uint8_t *b) {
+void LcdDispByte(INT8U *b) {
 
-    uint8_t upnib, lonib;
+    INT8U upnib, lonib;
 
     lonib = *b & 0x0F;
     upnib = (*b & 0xF0)>>4;
@@ -277,7 +232,7 @@ void LcdDispByte(uint8_t *b) {
 }   
 
 /********************************************************************
-* LcdDispStrg(uint8_t *s)
+* LcdDispStrg(INT8U *s)
 *
 *  PARAMETERS: *s - pointer to the NULL terminated string to be 
 *                   displayed.
@@ -285,9 +240,9 @@ void LcdDispByte(uint8_t *b) {
 *  DESCRIPTION: Displays the string pointed to by s.
 *
 ********************************************************************/
-void LcdDispStrg(uint8_t *s) {
+void LcdDispStrg(INT8U *s) {
 
-    uint8_t *sptr = s;
+    INT8U *sptr = s;
 
     while(*sptr != 0x00) {
         LcdDispChar(*sptr);
@@ -296,7 +251,7 @@ void LcdDispStrg(uint8_t *s) {
 }
 
 /********************************************************************
-** LcdMoveCursor(uint8_t row, uint8_t col)
+** LcdMoveCursor(INT8U row, INT8U col)
 *
 *  PARAMETERS: row - Destination row (1 or 2).
 *              col - Destination column (1 - 16).
@@ -304,7 +259,7 @@ void LcdDispStrg(uint8_t *s) {
 *  DESCRIPTION: Moves the cursor to [row,col].
 *
 ********************************************************************/
-void LcdMoveCursor(uint8_t row, uint8_t col) {
+void LcdMoveCursor(INT8U row, INT8U col) {
 
     if(row == 1) {
         LcdWrCmd(LCD_LINE1_ADDR + col - 1);
@@ -314,7 +269,7 @@ void LcdMoveCursor(uint8_t row, uint8_t col) {
 }
 
 /********************************************************************
-** LcdDispTime(uint8_t hrs, uint8_t min, uint8_t sec)
+** LcdDispTime(INT8U hrs, INT8U min, INT8U sec)
 *
 *  PARAMETERS: hrs - Hours value.
 *              min - Minutes value.
@@ -323,9 +278,9 @@ void LcdMoveCursor(uint8_t row, uint8_t col) {
 *  DESCRIPTION: Displays the time in HH:MM:SS format. 
 *               First converts to decimal.
 ********************************************************************/
-void LcdDispTime(uint8_t hrs, uint8_t min, uint8_t sec) {
+void LcdDispTime(INT8U hrs, INT8U min, INT8U sec) {
 
-    uint8_t tens, ones;
+    INT8U tens, ones;
 
     ones = (hrs % 10) + '0';
     hrs = hrs / 10;
@@ -353,7 +308,7 @@ void LcdDispTime(uint8_t hrs, uint8_t min, uint8_t sec) {
 }
 
 /********************************************************************
-** LcdDispDecByte(uint8_t *b, uint8_t lz)
+** LcdDispDecByte(INT8U *b, INT8U lz)
 *
 *  PARAMETERS: *b - Pointer to the byte to be displayed.
 *              lz - (Binary)Display leading zeros if TRUE.
@@ -365,10 +320,10 @@ void LcdDispTime(uint8_t hrs, uint8_t min, uint8_t sec) {
 *
 *  RETURNS: None
 ********************************************************************/
-void LcdDispDecByte(uint8_t *b, uint8_t lz) {
+void LcdDispDecByte(INT8U *b, INT8U lz) {
 
-    uint8_t bin = *b;
-    uint8_t huns, tens, ones;
+    INT8U bin = *b;
+    INT8U huns, tens, ones;
    
     ones = (bin % 10) + '0';   /* Convert to decimal digits        */
     bin    = bin / 10;
@@ -390,7 +345,7 @@ void LcdDispDecByte(uint8_t *b, uint8_t lz) {
 }
 
 /********************************************************************
-** LcdCursor(uint8_t on, uint8_t blink)
+** LcdCursor(INT8U on, INT8U blink)
 *
 *  PARAMETERS: on - (Binary)Turn cursor on if TRUE, off if FALSE.
 *              blink - (Binary)Cursor blinks if TRUE.
@@ -399,9 +354,9 @@ void LcdDispDecByte(uint8_t *b, uint8_t lz) {
 *
 *  RETURNS: None
 ********************************************************************/
-void LcdCursor(uint8_t on, uint8_t blink) {
+void LcdCursor(INT8U on, INT8U blink) {
 
-    uint8_t curcmd = 0x0C;
+    INT8U curcmd = 0x0C;
     
     if(on){
         curcmd |= 0x02;
@@ -410,52 +365,6 @@ void LcdCursor(uint8_t on, uint8_t blink) {
         curcmd |= 0x01;
     }
     LcdWrCmd(curcmd);
-}
-
-/********************************************************************
-** LcdDly500ns(void)
-*  	Delays, at least, 500ns
-*   Designed for 120MHz or 150MHz clock.
- * 	Tdly >= (66.5ns)i (at 150MHz)
- * Currently set to ~532ns with i=8.
- * TDM 01/20/2013
-********************************************************************/
-static void LcdDly500ns(void){
-	//INT32U i;
-	//for(i=0;i<8;i++){
-	//}
-    _delay_us(0.5);
-}
-
-/********************************************************************
-** LcdDly40us(void)
-* 	Clock frequency independent because it uses LcdDly500ns.
-********************************************************************/
-static void LcdDly40us(void){
-    //uint8_t cnt;
-    //for(cnt=80;cnt > 0;cnt--){
-    //    LcdDly500ns();
-    //}
-    _delay_us(40);
-}
-
-/********************************************************************
-** LcdDlyms(uint8_t ms)
-*  	Delays, at least, ms milliseconds. Maximum ~255ms.
-*  	Note, based on LcdDly500ns() so not very accurate but always
-*  	greater than ms milliseconds
-********************************************************************/
-static void LcdDlyms(uint8_t ms){
-    #if 0
-    INT32U cnt;
-    for(cnt=ms*2000;cnt>0;cnt--){
-        LcdDly500ns();
-    }
-    #endif
-    uint8_t msCnt;
-    for (msCnt = ms; msCnt > 0; msCnt--) {
-        _delay_ms(1);
-    }
 }
 
 /********************************************************************
