@@ -91,6 +91,7 @@ void mainLcdInit(void) {
     //uint8_t i;
 
     LcdInit();
+    LcdCursor(FALSE, TRUE);
     //lcd_command(1<<LCD_CGRAM);
     //for (i = 0; i < 16; i++) {
     //    LcdDispChar(pgm_read_byte(&mainCustomChars[i]));
@@ -118,16 +119,26 @@ void mainFrequencyInputTask(void) {
 
     // Display frequency mode message
     LcdClrDisp();
+    _delay_ms(2000);
+    //LcdCursor(TRUE, FALSE);
+    for (;;) {
+        DDRB |= (1<<PB0);
+        PORTB ^= (1<<PB0);
+        _delay_ms(500);
+    }
+
     LcdDispStrg("Enter Frequency:");
+
     // Show current buffer on lcd
     mainFrequencyInputLcdDisp();
 
     for (msgIndex = 0; msgIndex <= 5; msgIndex++) {
         // Enable interrupts, put cpu to sleep, will wake on uart char rx
-        sei();
-        set_sleep_mode(SLEEP_MODE_IDLE);
-        sleep_mode();
+        //sei();
+        //set_sleep_mode(SLEEP_MODE_IDLE);
+        //sleep_mode();
         // Cpu wakes up here on keypress
+        while ((UCSR0A & (1<<RXC0)) == 0) {}
 
         msgIncomingChar = uartRx(); // Grab incoming char
 
@@ -240,10 +251,11 @@ void mainDataInputTask(void) {
 
     for (msgIndex = 0; msgIndex <= 64; msgIndex++) {
         // Enable interrupts, put cpu to sleep, will wake on uart char rx
-        sei();
-        set_sleep_mode(SLEEP_MODE_IDLE);
-        sleep_mode();
+        //sei();
+        //set_sleep_mode(SLEEP_MODE_IDLE);
+        //sleep_mode();
         // Cpu wakes up here on keypress
+        while ((UCSR0A & (1<<RXC0)) == 0) {}
 
         msgIncomingChar = uartRx(); // Grab incoming char
 
@@ -315,13 +327,13 @@ void mainDataInputLcdDisp(void) {
     LcdMoveCursor(2, 1); // Move cursor to beginning of second line
     // Check if msg exceeds 16 chars
     if (mainDataBuffer[16] == 0x00) {
-        lcd_puts(&mainDataBuffer[0]); // Print entire buffer onto lcd
+        LcdDispStrg(&mainDataBuffer[0]); // Print entire buffer onto lcd
     } else {
         LcdDispChar(1); // Print left arrow char
         // Check length of buffer
         for (bufferLength = 0; mainDataBuffer[bufferLength] != 0x00; bufferLength++) {}
         // bufferLength now contains length of buffer
-        lcd_puts(&mainDataBuffer[bufferLength-15]); // Print to end of string from bufferLength
+        LcdDispStrg(&mainDataBuffer[bufferLength-15]); // Print to end of string from bufferLength
     }
 }
 
