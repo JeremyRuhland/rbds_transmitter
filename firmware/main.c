@@ -23,7 +23,6 @@ void mainPwmControl(uint8_t command);
 
 // Global variables
 #include "sintables.txt"
-const uint8_t mainCustomChars[] PROGMEM = {0x0e, 0x11, 0x04, 0x0A, 0x00, 0x04, 0x04, 0x04, 0x00, 0x02, 0x06, 0x0e, 0x06, 0x02, 0x00, 0x00};
 volatile mainSystemState_t mainSystemState = FREQUENCY_INPUT_MODE;
 volatile uint8_t mainFrequencyBuffer[5];
 volatile uint16_t mainTransitFrequency;
@@ -89,13 +88,13 @@ void mainPwmInit(void) {
 }
 
 void mainLcdInit(void) {
-    uint8_t i;
+    //uint8_t i;
 
-    lcd_init(LCD_DISP_ON);
-    lcd_command(1<<LCD_CGRAM);
-    for (i = 0; i < 16; i++) {
-        lcd_data(pgm_read_byte(&mainCustomChars[i]));
-    }
+    LcdInit();
+    //lcd_command(1<<LCD_CGRAM);
+    //for (i = 0; i < 16; i++) {
+    //    LcdDispChar(pgm_read_byte(&mainCustomChars[i]));
+    //}
 }
 
 /*******************************************************************************
@@ -118,8 +117,8 @@ void mainFrequencyInputTask(void) {
     }
 
     // Display frequency mode message
-    lcd_clrscr();
-    lcd_puts_P("Enter Frequency:");
+    LcdClrDisp();
+    LcdDispStrg("Enter Frequency:");
     // Show current buffer on lcd
     mainFrequencyInputLcdDisp();
 
@@ -196,13 +195,13 @@ void mainFrequencyInputTask(void) {
 
 void mainFrequencyInputLcdDisp(void) {
     // Show current buffer on lcd
-    lcd_gotoxy(5, 1);
-    lcd_putc(mainFrequencyBuffer[0]);
-    lcd_putc(mainFrequencyBuffer[1]);
-    lcd_putc(mainFrequencyBuffer[2]);
-    lcd_putc('.');
-    lcd_putc(mainFrequencyBuffer[3]);
-    lcd_putc(mainFrequencyBuffer[4]);
+    LcdMoveCursor(2, 6);
+    LcdDispChar(mainFrequencyBuffer[0]);
+    LcdDispChar(mainFrequencyBuffer[1]);
+    LcdDispChar(mainFrequencyBuffer[2]);
+    LcdDispChar('.');
+    LcdDispChar(mainFrequencyBuffer[3]);
+    LcdDispChar(mainFrequencyBuffer[4]);
 }
 
 void mainDelayOneSec(void) {
@@ -234,8 +233,8 @@ void mainDataInputTask(void) {
     }
     
     // Display frequency mode message
-    lcd_clrscr();
-    lcd_puts_P("Enter a message:");
+    LcdClrDisp();
+    LcdDispStrg("Enter a message:");
     // Show current buffer on lcd
     mainDataInputLcdDisp();
 
@@ -313,12 +312,12 @@ void mainDataInputLcdDisp(void) {
     // Show latest 15 chars of buffer on display
     uint8_t bufferLength;
     
-    lcd_gotoxy(0, 1); // Move cursor to beginning of second line
+    LcdMoveCursor(2, 1); // Move cursor to beginning of second line
     // Check if msg exceeds 16 chars
     if (mainDataBuffer[16] == 0x00) {
         lcd_puts(&mainDataBuffer[0]); // Print entire buffer onto lcd
     } else {
-        lcd_data(1); // Print left arrow char
+        LcdDispChar(1); // Print left arrow char
         // Check length of buffer
         for (bufferLength = 0; mainDataBuffer[bufferLength] != 0x00; bufferLength++) {}
         // bufferLength now contains length of buffer
@@ -439,11 +438,11 @@ void mainTransmissionTask(void) {
     mainPwmControl(STARTTHEMUSIC); // Start the music
 
     // Display frequency mode message
-    lcd_clrscr();
-    lcd_puts_P("Transmitting ");
-    lcd_data(0); // Print custom transmission char
-    lcd_gotoxy(0,1);
-    lcd_puts_P("Freq");
+    LcdClrDisp();
+    LcdDispStrg("Transmitting ");
+    LcdDispChar(0); // Print custom transmission char
+    LcdMoveCursor(2,1);
+    LcdDispStrg("Freq");
     mainFrequencyInputLcdDisp();
 
     // Set transmission frequency

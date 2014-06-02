@@ -107,5 +107,5 @@ typedef union rbds_t {
 // These includes require some structs defined above
 #include "spi.h"
 #include "uart.h"
-#include "lcd.h"
+#include "LCD.h"
 #include "crc.h"
