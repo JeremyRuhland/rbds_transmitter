@@ -21,7 +21,7 @@ AVRDUDEFLAGS=-p $(MMCU)
 ALL: $(PROJECT).hex filesize
 
 $(PROJECT).hex: $(PROJECT).elf
-	avr-objcopy -j .text -O ihex $(PROJECT).elf $(PROJECT).hex
+	avr-objcopy -j .text -j .data -O ihex $(PROJECT).elf $(PROJECT).hex
 
 $(PROJECT).elf: $(SOURCES)
 	$(CC) $(CFLAGS) -o $(PROJECT).elf $(SOURCES)
