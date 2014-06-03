@@ -17,8 +17,8 @@
 /*******************************************************************
 * LCD Port Defines 
 *******************************************************************/
-#define LCD_RS_BIT     (1<<PC4)
-#define LCD_E_BIT      (1<<PC5)
+#define LCD_RS_BIT     (1<<PC5)
+#define LCD_E_BIT      (1<<PC4)
 #define LCD_DB_MASK	   0x0f
 #define LCD_PORT       PORTC
 #define LCD_PORT_DIR   DDRC
@@ -27,7 +27,7 @@
 #define LCD_CLR_RS()   LCD_PORT &= ~(LCD_RS_BIT)
 #define LCD_SET_E()    LCD_PORT |= LCD_E_BIT
 #define LCD_CLR_E()    LCD_PORT &= ~(LCD_E_BIT)
-#define LCD_WR_DB(nib) (LCD_PORT = (LCD_PORT & ~LCD_DB_MASK)|((nib)<<0))
+#define LCD_WR_DB(nib) (LCD_PORT = (LCD_PORT & ~LCD_DB_MASK)|((nib)))
 
 /********************************************************************
 * LCD Defines                                                 *
@@ -48,32 +48,34 @@
 ********************************************************************/
 void LcdInit(void);
 void LcdClrDisp(void);
-void LcdClrLine(INT8U line);
-void LcdDispChar(INT8U c);
-void LcdDispByte(INT8U *b);
-void LcdDispStrg(INT8U *s);
-void LcdMoveCursor(INT8U row, INT8U col);
-void LcdDispDecByte(INT8U *b, INT8U lz);
-void LcdDispTime(INT8U hrs, INT8U mins, INT8U secs);
-void LcdCursor(INT8U on, INT8U blink);
+void LcdClrLine(uint8_t line);
+void LcdDispChar(uint8_t c);
+void LcdDispByte(uint8_t *b);
+void LcdDispStrg(uint8_t *s);
+void LcdDispStrgP(uint8_t *s);
+void LcdMoveCursor(uint8_t row, uint8_t col);
+void LcdDispDecByte(uint8_t *b, uint8_t lz);
+void LcdDispTime(uint8_t hrs, uint8_t mins, uint8_t secs);
+void LcdCursor(uint8_t on, uint8_t blink);
 void LcdBSpace(void);
 void LcdFSpace(void);
 
 /* Private */
-static void LcdWrCmd(INT8U cmd);
+static void LcdWrCmd(uint8_t cmd);
+static uint8_t i;
 static const uint8_t mainCustomChars[] PROGMEM = {0x0e, 0x11, 0x04, 0x0A, 0x00, 0x04, 0x04, 0x04, 0x00, 0x02, 0x06, 0x0e, 0x06, 0x02, 0x00, 0x00};
 
 /********************************************************************
 * Function Definitions
 *********************************************************************
-* LcdWrCmd(INT8U cmd) - Private
+* LcdWrCmd(uint8_t cmd) - Private
 *
 *  PARAMETERS: cmd - Command to be sent to the LCD
 *
 *  DESCRIPTION: Sends a command write sequence to the LCD
 *
 ********************************************************************/
-static void LcdWrCmd(INT8U cmd) {
+static void LcdWrCmd(uint8_t cmd) {
       LCD_CLR_RS();				//Select command
       LCD_WR_DB(cmd>>4);		//Out most sig nibble
       LCD_SET_E();				//Pulse E. 230ns min per Seiko doc
@@ -135,10 +137,18 @@ void LcdInit(void) {
     LcdWrCmd(LCD_SHIFT_CUR);
     LcdWrCmd(LCD_DIS_INIT);
     LcdClrDisp();
+
+    // Create custom chars
+    LcdWrCmd(0x40);
+    LCD_SET_RS();
+    for (i = 0; i <= 15; i++) {
+        LcdDispChar(pgm_read_byte(&mainCustomChars[i]));
+    }
+    LcdMoveCursor(1,1);
 } 
 
 /********************************************************************
-** LcdDispChar(INT8U c) - Public
+** LcdDispChar(uint8_t c) - Public
 *
 *  PARAMETERS: c - ASCII character to be sent to the LCD
 *
@@ -146,7 +156,7 @@ void LcdInit(void) {
 *               that the LCD port is configured for a data write.
 *
 ********************************************************************/
-void LcdDispChar(INT8U c) {
+void LcdDispChar(uint8_t c) {
     LCD_WR_DB((c>>4));
     LCD_SET_E();
     _delay_us(1);
@@ -183,10 +193,10 @@ void LcdClrDisp(void) {
 *               returns the cursor to column 1 of that line.
 *
 ********************************************************************/
-void LcdClrLine (INT8U line) {
+void LcdClrLine (uint8_t line) {
   
-   INT8U start_addr; 
-   INT8U i;
+   uint8_t start_addr; 
+   uint8_t i;
 
    if(line == 1){ 
       start_addr = LCD_LINE1_ADDR;  
@@ -203,16 +213,16 @@ void LcdClrLine (INT8U line) {
 }
  
 /********************************************************************
-* LcdDispByte(INT8U *b)
+* LcdDispByte(uint8_t *b)
 *
 *  PARAMETERS: *b - pointer to the byte to be displayed.
 *
 *  DESCRIPTION: Displays the byte pointed to by b in hex.
 *
 ********************************************************************/
-void LcdDispByte(INT8U *b) {
+void LcdDispByte(uint8_t *b) {
 
-    INT8U upnib, lonib;
+    uint8_t upnib, lonib;
 
     lonib = *b & 0x0F;
     upnib = (*b & 0xF0)>>4;
@@ -232,7 +242,7 @@ void LcdDispByte(INT8U *b) {
 }   
 
 /********************************************************************
-* LcdDispStrg(INT8U *s)
+* LcdDispStrg(uint8_t *s)
 *
 *  PARAMETERS: *s - pointer to the NULL terminated string to be 
 *                   displayed.
@@ -240,9 +250,9 @@ void LcdDispByte(INT8U *b) {
 *  DESCRIPTION: Displays the string pointed to by s.
 *
 ********************************************************************/
-void LcdDispStrg(INT8U *s) {
+void LcdDispStrg(uint8_t *s) {
 
-    INT8U *sptr = s;
+    uint8_t *sptr = s;
 
     while(*sptr != 0x00) {
         LcdDispChar(*sptr);
@@ -251,7 +261,26 @@ void LcdDispStrg(INT8U *s) {
 }
 
 /********************************************************************
-** LcdMoveCursor(INT8U row, INT8U col)
+* LcdDispStrgP(uint8_t *s)
+*
+*  PARAMETERS: *s - pointer to the NULL terminated string to be 
+*                   displayed stored in flash memory.
+*
+*  DESCRIPTION: Displays the string pointed to by s.
+*
+********************************************************************/
+void LcdDispStrgP(uint8_t *s) {
+
+    uint8_t *sptr = s;
+
+    while(pgm_read_byte(sptr) != 0x00) {
+        LcdDispChar(pgm_read_byte(sptr));
+        sptr++;
+    }
+}
+
+/********************************************************************
+** LcdMoveCursor(uint8_t row, uint8_t col)
 *
 *  PARAMETERS: row - Destination row (1 or 2).
 *              col - Destination column (1 - 16).
@@ -259,7 +288,7 @@ void LcdDispStrg(INT8U *s) {
 *  DESCRIPTION: Moves the cursor to [row,col].
 *
 ********************************************************************/
-void LcdMoveCursor(INT8U row, INT8U col) {
+void LcdMoveCursor(uint8_t row, uint8_t col) {
 
     if(row == 1) {
         LcdWrCmd(LCD_LINE1_ADDR + col - 1);
@@ -269,7 +298,7 @@ void LcdMoveCursor(INT8U row, INT8U col) {
 }
 
 /********************************************************************
-** LcdDispTime(INT8U hrs, INT8U min, INT8U sec)
+** LcdDispTime(uint8_t hrs, uint8_t min, uint8_t sec)
 *
 *  PARAMETERS: hrs - Hours value.
 *              min - Minutes value.
@@ -278,9 +307,9 @@ void LcdMoveCursor(INT8U row, INT8U col) {
 *  DESCRIPTION: Displays the time in HH:MM:SS format. 
 *               First converts to decimal.
 ********************************************************************/
-void LcdDispTime(INT8U hrs, INT8U min, INT8U sec) {
+void LcdDispTime(uint8_t hrs, uint8_t min, uint8_t sec) {
 
-    INT8U tens, ones;
+    uint8_t tens, ones;
 
     ones = (hrs % 10) + '0';
     hrs = hrs / 10;
@@ -308,7 +337,7 @@ void LcdDispTime(INT8U hrs, INT8U min, INT8U sec) {
 }
 
 /********************************************************************
-** LcdDispDecByte(INT8U *b, INT8U lz)
+** LcdDispDecByte(uint8_t *b, uint8_t lz)
 *
 *  PARAMETERS: *b - Pointer to the byte to be displayed.
 *              lz - (Binary)Display leading zeros if TRUE.
@@ -320,10 +349,10 @@ void LcdDispTime(INT8U hrs, INT8U min, INT8U sec) {
 *
 *  RETURNS: None
 ********************************************************************/
-void LcdDispDecByte(INT8U *b, INT8U lz) {
+void LcdDispDecByte(uint8_t *b, uint8_t lz) {
 
-    INT8U bin = *b;
-    INT8U huns, tens, ones;
+    uint8_t bin = *b;
+    uint8_t huns, tens, ones;
    
     ones = (bin % 10) + '0';   /* Convert to decimal digits        */
     bin    = bin / 10;
@@ -345,7 +374,7 @@ void LcdDispDecByte(INT8U *b, INT8U lz) {
 }
 
 /********************************************************************
-** LcdCursor(INT8U on, INT8U blink)
+** LcdCursor(uint8_t on, uint8_t blink)
 *
 *  PARAMETERS: on - (Binary)Turn cursor on if TRUE, off if FALSE.
 *              blink - (Binary)Cursor blinks if TRUE.
@@ -354,9 +383,9 @@ void LcdDispDecByte(INT8U *b, INT8U lz) {
 *
 *  RETURNS: None
 ********************************************************************/
-void LcdCursor(INT8U on, INT8U blink) {
+void LcdCursor(uint8_t on, uint8_t blink) {
 
-    INT8U curcmd = 0x0C;
+    uint8_t curcmd = 0x0C;
     
     if(on){
         curcmd |= 0x02;
