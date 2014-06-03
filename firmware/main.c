@@ -23,16 +23,22 @@ void mainPwmControl(uint8_t command);
 
 // Global variables
 #include "sintables.txt"
-volatile mainSystemState_t mainSystemState = FREQUENCY_INPUT_MODE;
-volatile uint8_t mainFrequencyBuffer[5];
-volatile uint16_t mainTransitFrequency;
-volatile uint8_t mainDataBuffer[65];
-volatile uint8_t mainRbdsPacketBuffer[208];
-volatile uint8_t mainRbdsPacketLength;
+uint8_t mainEnterFreqStrg[] PROGMEM = "Enter Frequency:";
+uint8_t mainEnterMsgStrg[] PROGMEM = "Enter a message:";
+uint8_t mainTransmittingStrg[] PROGMEM = "Transmitting on";
+uint8_t mainFreqStrg[] PROGMEM = "freq";
+
+mainSystemState_t mainSystemState = FREQUENCY_INPUT_MODE;
+uint8_t mainFrequencyBuffer[5];
+uint16_t mainTransitFrequency;
+uint8_t mainDataBuffer[65];
+uint8_t mainRbdsPacketBuffer[208];
+uint8_t mainRbdsPacketLength;
 
 int main(void) {
     // Initialize all functions
     mainGpioInit();
+    mainPwmInit();
     spiInit();
     uartInit();
     mainLcdInit();
@@ -65,37 +71,28 @@ void mainGpioInit(void) {
     PORTD |= ((1<<PD3) | (1<<PD5) | (1<<PD6));
     DDRD |= ((1<<PD1) | (1<<PD3) | (1<<PD5) | (1<<PD6));
     DDRB |= ((1<<PB1) | (1<<PB2) | (1<<PB3) | (1<<PB5));
+    PRR |= ((1<<PRTWI)|(1<<PRADC)); // Power down unused modules
 }
 
 void mainPwmInit(void) {
-    PRR |= ((1<<PRTWI)|(1<<PRTIM2)|(1<<PRTIM0)|(1<<PRTIM1)|(1<<PRADC)); // Power down unused modules, put pwm to sleep
-        
-    // 57khz 0c0a, 8, 0x23
+    // 57khz 0c0a, PD6
     TCCR0A |= ((1<<COM0A0)|(1<<WGM01)); // Toggle 0c0a on cmp match, ctc mode
-    TCCR0B |= (1<<CS00); // prescaler 1
     OCR0A = 139;
     
-    // 19khz 0c1b
+    // 19khz 0c1b, PB2
     TCCR1A |= (1<<COM1B0); // Toggle 0c1b on cmp match, ctc mode
-    TCCR1B |= ((1<<WGM12)|(1<<CS10)); // ctc mode, prescaler 1
+    TCCR1B |= (1<<WGM12); // ctc mode, prescaler 1
     OCR1AH = ((uint8_t) (420>>8));
     OCR1AL = ((uint8_t) 420);
     
-    // ~26khz 0c2b
+    // ~26khz 0c2b, PD3
     TCCR2A |= ((1<<COM2B0)|(1<<WGM21)); // Toggle 0c2b on cmp match, ctc mode
-    TCCR2B |= (1<<CS21); // prescaler 8
     OCR2A = 37;
 }
 
 void mainLcdInit(void) {
-    //uint8_t i;
-
     LcdInit();
-    LcdCursor(FALSE, TRUE);
-    //lcd_command(1<<LCD_CGRAM);
-    //for (i = 0; i < 16; i++) {
-    //    LcdDispChar(pgm_read_byte(&mainCustomChars[i]));
-    //}
+    LcdCursor(FALSE, FALSE);
 }
 
 /*******************************************************************************
@@ -119,15 +116,8 @@ void mainFrequencyInputTask(void) {
 
     // Display frequency mode message
     LcdClrDisp();
-    _delay_ms(2000);
-    //LcdCursor(TRUE, FALSE);
-    for (;;) {
-        DDRB |= (1<<PB0);
-        PORTB ^= (1<<PB0);
-        _delay_ms(500);
-    }
 
-    LcdDispStrg("Enter Frequency:");
+    LcdDispStrgP(mainEnterFreqStrg);
 
     // Show current buffer on lcd
     mainFrequencyInputLcdDisp();
@@ -173,11 +163,32 @@ void mainFrequencyInputTask(void) {
     msgTransitFrequency = 0;
     // Shift digit over and add each element of buffer array
     for (msgIndex = 0; msgIndex <= 4; msgIndex++) {
-        msgTransitFrequency *= 10;
-        msgTransitFrequency += (mainFrequencyBuffer[msgIndex]);
+        msgTransitFrequency *= ((uint32_t) 10);
+        msgTransitFrequency += ((uint32_t) (mainFrequencyBuffer[msgIndex]-0x30));
     }
+
+    #if 0
+    LcdClrLine(2);
+    if (mainTransitFrequency > 0) {
+        LcdDispChar('>');
+    } else {
+        LcdDispChar('<');
+    }
+    for (;;) {}
+    #endif
+
     // If impossibly high frequency is requested, force lower frequency
-    if (msgTransitFrequency > 15000) {
+    if (msgTransitFrequency < 7000) {
+        msgTransitFrequency = 7000;
+        mainFrequencyBuffer[0] = ' ';
+        mainFrequencyBuffer[1] = '7';
+        mainFrequencyBuffer[2] = '0';
+        mainFrequencyBuffer[3] = '0';
+        mainFrequencyBuffer[4] = '0';
+        // Let the user see their entry has been corrected
+        mainFrequencyInputLcdDisp();
+        mainDelayOneSec();
+    } else if (msgTransitFrequency > 15000) {
         msgTransitFrequency = 15000;
         mainFrequencyBuffer[0] = '1';
         mainFrequencyBuffer[1] = '5';
@@ -188,16 +199,6 @@ void mainFrequencyInputTask(void) {
         mainFrequencyInputLcdDisp();
         mainDelayOneSec();
     // If impossibly low frequency is requested, force higher frequency
-    } else if (msgTransitFrequency < 7000) {
-        msgTransitFrequency = 7000;
-        mainFrequencyBuffer[0] = ' ';
-        mainFrequencyBuffer[1] = '7';
-        mainFrequencyBuffer[2] = '0';
-        mainFrequencyBuffer[3] = '0';
-        mainFrequencyBuffer[4] = '0';
-        // Let the user see their entry has been corrected
-        mainFrequencyInputLcdDisp();
-        mainDelayOneSec();
     } else {}
     mainTransitFrequency = ((uint16_t) msgTransitFrequency);
 
@@ -207,12 +208,17 @@ void mainFrequencyInputTask(void) {
 void mainFrequencyInputLcdDisp(void) {
     // Show current buffer on lcd
     LcdMoveCursor(2, 6);
+    LcdDispChar('[');
     LcdDispChar(mainFrequencyBuffer[0]);
     LcdDispChar(mainFrequencyBuffer[1]);
     LcdDispChar(mainFrequencyBuffer[2]);
     LcdDispChar('.');
     LcdDispChar(mainFrequencyBuffer[3]);
     LcdDispChar(mainFrequencyBuffer[4]);
+    LcdDispChar(']');
+    LcdDispChar('M');
+    LcdDispChar('H');
+    LcdDispChar('z');
 }
 
 void mainDelayOneSec(void) {
@@ -245,7 +251,7 @@ void mainDataInputTask(void) {
     
     // Display frequency mode message
     LcdClrDisp();
-    LcdDispStrg("Enter a message:");
+    LcdDispStrgP(mainEnterMsgStrg);
     // Show current buffer on lcd
     mainDataInputLcdDisp();
 
@@ -323,16 +329,19 @@ void mainDataInputTask(void) {
 void mainDataInputLcdDisp(void) {
     // Show latest 15 chars of buffer on display
     uint8_t bufferLength;
+    uint8_t i;
     
+    LcdClrLine(2);
     LcdMoveCursor(2, 1); // Move cursor to beginning of second line
     // Check if msg exceeds 16 chars
-    if (mainDataBuffer[16] == 0x00) {
-        LcdDispStrg(&mainDataBuffer[0]); // Print entire buffer onto lcd
+    for (bufferLength = 0; mainDataBuffer[bufferLength] != 0x00; bufferLength++) {}
+    // bufferLength now contains length of buffer
+    if (bufferLength <= 16) {
+        for (i = 0; i < bufferLength; i++) {
+            LcdDispChar(mainDataBuffer[i]);
+        }
     } else {
         LcdDispChar(1); // Print left arrow char
-        // Check length of buffer
-        for (bufferLength = 0; mainDataBuffer[bufferLength] != 0x00; bufferLength++) {}
-        // bufferLength now contains length of buffer
         LcdDispStrg(&mainDataBuffer[bufferLength-15]); // Print to end of string from bufferLength
     }
 }
@@ -343,7 +352,7 @@ void mainDataInputLcdDisp(void) {
 * Modifies global variable mainSystemState & mainRbdsPacketBuffer              *
 *******************************************************************************/
 void mainEncodingTask(void) {
-    rbds_t encRbdsBuffer[mainRbdsPacketLength];
+    rbds_t encRbdsBuffer[64];
     uint8_t encLoopLength;
     uint8_t encBufferCount;
     uint8_t encBitCount;
@@ -451,10 +460,9 @@ void mainTransmissionTask(void) {
 
     // Display frequency mode message
     LcdClrDisp();
-    LcdDispStrg("Transmitting ");
-    LcdDispChar(0); // Print custom transmission char
+    LcdDispStrgP(mainTransmittingStrg);
     LcdMoveCursor(2,1);
-    LcdDispStrg("Freq");
+    LcdDispStrgP(mainFreqStrg);
     mainFrequencyInputLcdDisp();
 
     // Set transmission frequency
@@ -522,9 +530,13 @@ uint16_t mainFrequencyConverter(uint16_t frequency) {
 void mainPwmControl(uint8_t command) {
     if (command == STARTTHEMUSIC) {
         DDRD &= ~(1<<PD1); // Turn on transmission circuits
-        PRR &= ~((1<<PRTIM0)|(1<<PRTIM1)|(1<<PRTIM2)); // Power up pwm modules
+        TCCR0B |= (1<<CS00); // prescaler 1
+        TCCR1B |= (1<<CS10); // ctc mode, prescaler 1
+        TCCR2B |= (1<<CS21); // prescaler 8
     } else {
         DDRD |= (1<<PD1); // Turn off transmission circuits
-        PRR |= ((1<<PRTIM0)|(1<<PRTIM1)|(1<<PRTIM2)); // Power down pwm modules
+        TCCR0B &= ~(1<<CS00); // prescaler 1
+        TCCR1B &= ~(1<<CS10); // ctc mode, prescaler 1
+        TCCR2B &= ~(1<<CS21); // prescaler 8
     }
 }
