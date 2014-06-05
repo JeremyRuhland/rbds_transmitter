@@ -7682,22 +7682,22 @@ Source: www.sumida.com/products/pdf/CEP125.pdf</description>
 <parts>
 <part name="U1" library="maxim" deviceset="MAX2606" device=""/>
 <part name="GND43" library="sparkfun" deviceset="GND" device=""/>
-<part name="L1" library="resistor" deviceset="L-US" device="L3216C" value="485nH"/>
+<part name="L1" library="resistor" deviceset="L-US" device="0204V" value="485nH"/>
 <part name="GND44" library="sparkfun" deviceset="GND" device=""/>
-<part name="C10" library="adafruit" deviceset="C-US" device="C1206" value="1uF"/>
-<part name="C11" library="adafruit" deviceset="C-US" device="C1206" value="4.7uF"/>
+<part name="C10" library="adafruit" deviceset="C-US" device="050-025X075" value="1uF"/>
+<part name="C11" library="adafruit" deviceset="C-US" device="050-025X075" value="4.7uF"/>
 <part name="GND45" library="sparkfun" deviceset="GND" device=""/>
 <part name="GND46" library="sparkfun" deviceset="GND" device=""/>
-<part name="R3" library="adafruit" deviceset="R-US_" device="R1206" value="100"/>
-<part name="R4" library="adafruit" deviceset="R-US_" device="R1206" value="100"/>
-<part name="C2" library="adafruit" deviceset="C-US" device="C1206" value="1nF"/>
-<part name="C3" library="adafruit" deviceset="C-US" device="C1206" value="1nF"/>
-<part name="C15" library="adafruit" deviceset="C-US" device="C1206" value="1nF"/>
+<part name="R3" library="adafruit" deviceset="R-US_" device="0207/10" value="100"/>
+<part name="R4" library="adafruit" deviceset="R-US_" device="0207/10" value="100"/>
+<part name="C2" library="adafruit" deviceset="C-US" device="050-025X075" value="1nF"/>
+<part name="C3" library="adafruit" deviceset="C-US" device="050-025X075" value="1nF"/>
+<part name="C15" library="adafruit" deviceset="C-US" device="050-025X075" value="1nF"/>
 <part name="GND28" library="sparkfun" deviceset="GND" device=""/>
 <part name="P+23" library="supply1" deviceset="VCC" device=""/>
 <part name="P+24" library="supply1" deviceset="VCC" device=""/>
 <part name="P+25" library="supply1" deviceset="VCC" device=""/>
-<part name="JP1" library="sparkfun" deviceset="M02" device="PTH"/>
+<part name="JP1" library="sparkfun" deviceset="M02" device="3.5MM"/>
 <part name="JP2" library="sparkfun" deviceset="M03" device="PTH"/>
 <part name="P+1" library="supply1" deviceset="VCC" device=""/>
 <part name="GND1" library="sparkfun" deviceset="GND" device=""/>
