@@ -17,8 +17,8 @@
 /*******************************************************************
 * LCD Port Defines 
 *******************************************************************/
-#define LCD_RS_BIT     (1<<PC5)
-#define LCD_E_BIT      (1<<PC4)
+#define LCD_RS_BIT     (1<<PC4)
+#define LCD_E_BIT      (1<<PC5)
 #define LCD_DB_MASK	   0x0f
 #define LCD_PORT       PORTC
 #define LCD_PORT_DIR   DDRC
@@ -63,7 +63,7 @@ void LcdFSpace(void);
 /* Private */
 static void LcdWrCmd(uint8_t cmd);
 static uint8_t i;
-static const uint8_t mainCustomChars[] PROGMEM = {0x0e, 0x11, 0x04, 0x0A, 0x00, 0x04, 0x04, 0x04, 0x00, 0x02, 0x06, 0x0e, 0x06, 0x02, 0x00, 0x00};
+static const uint8_t mainCustomChars[] PROGMEM = {0x0e, 0x11, 0x04, 0x0A, 0x00, 0x04, 0x04, 0x04, 0x00, 0x02, 0x06, 0x0e, 0x06, 0x02, 0x00, 0x00, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x00};
 
 /********************************************************************
 * Function Definitions
@@ -141,7 +141,7 @@ void LcdInit(void) {
     // Create custom chars
     LcdWrCmd(0x40);
     LCD_SET_RS();
-    for (i = 0; i <= 15; i++) {
+    for (i = 0; i <= 23; i++) {
         LcdDispChar(pgm_read_byte(&mainCustomChars[i]));
     }
     LcdMoveCursor(1,1);

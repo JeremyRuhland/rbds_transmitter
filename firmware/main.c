@@ -25,6 +25,7 @@ void mainPwmControl(uint8_t command);
 #include "sintables.txt"
 uint8_t mainEnterFreqStrg[] PROGMEM = "Enter Frequency:";
 uint8_t mainEnterMsgStrg[] PROGMEM = "Enter a message:";
+uint8_t mainEncodingStrg[] PROGMEM = "Encoding Message";
 uint8_t mainTransmittingStrg[] PROGMEM = "Transmitting on";
 uint8_t mainFreqStrg[] PROGMEM = "freq";
 
@@ -69,7 +70,7 @@ int main(void) {
 *******************************************************************************/
 void mainGpioInit(void) {
     PORTD |= ((1<<PD3) | (1<<PD5) | (1<<PD6));
-    DDRD |= ((1<<PD1) | (1<<PD3) | (1<<PD5) | (1<<PD6));
+    DDRD |= ((1<<PD2) | (1<<PD3) | (1<<PD5) | (1<<PD6));
     DDRB |= ((1<<PB1) | (1<<PB2) | (1<<PB3) | (1<<PB5));
     PRR |= ((1<<PRTWI)|(1<<PRADC)); // Power down unused modules
 }
@@ -363,6 +364,7 @@ void mainEncodingTask(void) {
     uint8_t encLastBit = 0;
     uint8_t encCurrentBit;
     uint8_t encWorkingBit;
+    uint8_t i;
     
     encLoopLength = ((mainRbdsPacketLength*4)-1);
     
@@ -436,6 +438,18 @@ void mainEncodingTask(void) {
         }
     }
     
+    LcdClrDisp();
+    LcdDispStrgP(mainEncodingStrg);
+    LcdMoveCursor(2, 1);
+    LcdDispChar('[');
+    LcdMoveCursor(2, 16);
+    LcdDispChar(']');
+    LcdMoveCursor(2,2);
+    for (i = 0; i <= 13; i++) {
+        LcdDispChar(2);
+        _delay_ms(70);
+    }
+
     mainSystemState = TRANSMISSION_MODE;
 }
 
@@ -512,6 +526,14 @@ void mainTransmissionTask(void) {
         }
     }
 
+    // Turn off DAC outputs
+    trxDac.bit.channel = CHA;
+    trxDac.bit.shutdown = SHUTDOWN;
+    spiUpdateDac(trxDac);
+    trxDac.bit.channel = CHB;
+    trxDac.bit.shutdown = SHUTDOWN;
+    spiUpdateDac(trxDac);
+
     mainPwmControl(STOPTHEMUSIC);
     mainSystemState = FREQUENCY_INPUT_MODE;
 }
@@ -529,12 +551,12 @@ uint16_t mainFrequencyConverter(uint16_t frequency) {
 
 void mainPwmControl(uint8_t command) {
     if (command == STARTTHEMUSIC) {
-        DDRD &= ~(1<<PD1); // Turn on transmission circuits
+        DDRD |= (1<<PD1); // Turn on transmission circuits
         TCCR0B |= (1<<CS00); // prescaler 1
         TCCR1B |= (1<<CS10); // ctc mode, prescaler 1
         TCCR2B |= (1<<CS21); // prescaler 8
     } else {
-        DDRD |= (1<<PD1); // Turn off transmission circuits
+        DDRD &= ~(1<<PD1); // Turn off transmission circuits
         TCCR0B &= ~(1<<CS00); // prescaler 1
         TCCR1B &= ~(1<<CS10); // ctc mode, prescaler 1
         TCCR2B &= ~(1<<CS21); // prescaler 8
